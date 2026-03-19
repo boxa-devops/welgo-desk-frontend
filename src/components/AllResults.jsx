@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { fmt, stars, CURRENCY_SYM } from '../utils.js';
+import { ToursPopup } from './HotelCard.jsx';
 import './AllResults.css';
 
 const HotelIcon = () => (
@@ -11,24 +12,44 @@ const HotelIcon = () => (
   </svg>
 );
 
-function ResultRow({ hotel, index }) {
-  const sym = CURRENCY_SYM[hotel.currency] || hotel.currency;
+function ResultRow({ hotel, index, currency }) {
+  const [open, setOpen] = useState(false);
+  const sym = CURRENCY_SYM[currency] || currency;
+  const altSym = currency === 'USD' ? CURRENCY_SYM.UZS : CURRENCY_SYM.USD;
+  const price = currency === 'USD' ? hotel.min_price_usd : hotel.min_price_uzs;
+  const altPrice = currency === 'USD' ? hotel.min_price_uzs : hotel.min_price_usd;
+
   return (
-    <div class="rr">
-      <span class="rr-num" aria-hidden="true">{index + 1}</span>
-      <HotelThumb src={hotel.picture_url} alt={hotel.name} />
-      <div class="rr-info">
-        <div class="rr-name">{hotel.name}</div>
-        <div class="rr-sub">
-          <span class="rr-stars" aria-hidden="true">{stars(hotel.stars)}</span>
-          {' '}
-          <span class="rr-rating">{hotel.rating.toFixed(1)}</span>
-          {' · '}
-          {hotel.region}
+    <>
+      <div
+        class="rr"
+        onClick={() => setOpen(true)}
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }}}
+        role="button"
+        aria-label={`${hotel.name}, от ${fmt(price)} ${sym}`}
+      >
+        <span class="rr-num" aria-hidden="true">{index + 1}</span>
+        <HotelThumb src={hotel.picture_url} alt={hotel.name} />
+        <div class="rr-info">
+          <div class="rr-name">{hotel.name}</div>
+          <div class="rr-sub">
+            <span class="rr-stars" aria-hidden="true">{stars(hotel.stars)}</span>
+            {' '}
+            <span class="rr-rating">{hotel.rating.toFixed(1)}</span>
+            {' · '}
+            {hotel.region}
+          </div>
         </div>
+        <div class="rr-price">
+          {fmt(price)} {sym}
+          <span class="rr-price-alt">{fmt(altPrice)} {altSym}</span>
+        </div>
+        <span class="rr-caret" aria-hidden="true">›</span>
       </div>
-      <div class="rr-price">{fmt(hotel.min_price)} {sym}</div>
-    </div>
+
+      {open && <ToursPopup hotel={hotel} currency={currency} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
@@ -52,7 +73,7 @@ function HotelThumb({ src, alt }) {
   );
 }
 
-export default function AllResults({ hotels }) {
+export default function AllResults({ hotels, currency }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -69,7 +90,7 @@ export default function AllResults({ hotels }) {
       {open && (
         <div class="all-list" id="all-results-list" role="list">
           {hotels.map((h, i) => (
-            <ResultRow key={h.hotel_id} hotel={h} index={i} />
+            <ResultRow key={h.hotel_id} hotel={h} index={i} currency={currency} />
           ))}
         </div>
       )}

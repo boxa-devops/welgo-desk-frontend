@@ -5,7 +5,7 @@
 }
 .msg-user-bubble {
   background: var(--brand);
-  color: #fff;
+  color: var(--brand-text);
   padding: 11px 16px;
   border-radius: 18px 18px 4px 18px;
   font-size: 14px;
@@ -28,7 +28,7 @@
   height: 32px;
   border-radius: 10px;
   background: var(--brand);
-  color: #fff;
+  color: var(--brand-text);
   font-size: 13px;
   font-weight: 800;
   display: flex;
@@ -36,7 +36,7 @@
   justify-content: center;
   flex-shrink: 0;
   margin-top: 2px;
-  box-shadow: 0 2px 6px rgba(37,99,235,.35);
+  box-shadow: 0 2px 6px rgba(0,223,170,.35);
 }
 
 .ai-bubble {
@@ -170,6 +170,12 @@
   font-weight: 700;
 }
 
+.ai-summary-alt {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .cache-badge {
   display: inline-flex;
   align-items: center;
@@ -194,6 +200,15 @@
 
 @media (max-width: 640px) {
   .highlight-cards { grid-template-columns: 1fr; }
+}
+
+/* ── Text reply (conversational) ── */
+.ai-text-reply {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 /* ── Error ── */

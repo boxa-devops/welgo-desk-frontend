@@ -185,7 +185,7 @@
 }
 
 .pill-btn:hover:not(.active) { background: var(--surface-2); }
-.pill-btn.active { background: var(--brand); color: #fff; }
+.pill-btn.active { background: var(--brand); color: var(--brand-text); }
 .pill-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
 
 /* Advanced toggle */

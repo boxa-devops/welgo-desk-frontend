@@ -1,5 +1,7 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
+import { createPortal } from 'preact/compat';
 import { fmt, stars, ratingClass, CURRENCY_SYM } from '../utils.js';
+import TourDetailModal from './TourDetailModal.jsx';
 import './HotelCard.css';
 
 const FlightIcon = () => (
@@ -9,7 +11,13 @@ const FlightIcon = () => (
   </svg>
 );
 
-// Inline SVG icons — no emoji
+const CloseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" width="16" height="16">
+    <path d="M18 6L6 18M6 6l12 12"/>
+  </svg>
+);
+
 const ICONS = {
   trophy: <svg viewBox="0 0 24 24"><path d="M6 9H2V3h4M18 9h4V3h-4M12 17v4M8 21h8M6 3h12l-1 9a5 5 0 0 1-10 0L6 3z"/></svg>,
   tag:    <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/></svg>,
@@ -30,89 +38,238 @@ function groupByOperator(tours) {
     if (!map.has(t.operator_name)) map.set(t.operator_name, []);
     map.get(t.operator_name).push(t);
   }
-  // Sort operators by their cheapest tour price
   return [...map.entries()]
-    .sort((a, b) => Math.min(...a[1].map(t => t.price)) - Math.min(...b[1].map(t => t.price)));
+    .sort((a, b) => Math.min(...a[1].map(t => t.price_usd)) - Math.min(...b[1].map(t => t.price_usd)));
 }
 
-export default function HotelCard({ hotel, label, labelIcon, currency }) {
-  const [expanded, setExpanded] = useState(false);
-  const sym = CURRENCY_SYM[hotel.currency] || hotel.currency;
-  const rc = ratingClass(hotel.rating);
-  const opGroups = expanded ? groupByOperator(hotel.tours) : null;
-  const opCount = new Set(hotel.tours.map(t => t.operator_name)).size;
+function OperatorLogo({ id, name }) {
+  const [failed, setFailed] = useState(false);
+  const initials = name ? name.slice(0, 2).toUpperCase() : '?';
+
+  if (!id || failed) {
+    return (
+      <div class="hpopup-op-logo hpopup-op-logo-ph" aria-hidden="true">
+        {initials}
+      </div>
+    );
+  }
+  return (
+    <img
+      class="hpopup-op-logo"
+      src={`https://tourvisor.ru/pics/operators/mobilelogo/${id}.png`}
+      alt={name}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function BuyButton({ tourId }) {
+  const [state, setState] = useState('idle'); // idle | loading | error
+
+  async function handleClick(e) {
+    e.stopPropagation();
+    setState('loading');
+    try {
+      const res = await fetch(`/api/tours/${tourId}/link`);
+      if (!res.ok) throw new Error('not found');
+      const { url } = await res.json();
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setState('idle');
+    } catch {
+      setState('error');
+      setTimeout(() => setState('idle'), 2000);
+    }
+  }
 
   return (
-    <article
-      class={`hcard ${expanded ? 'expanded' : ''}`}
-      onClick={() => setExpanded(e => !e)}
-      tabIndex={0}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(v => !v); }}}
-      aria-expanded={expanded}
-      aria-label={`${hotel.name}, ${stars(hotel.stars)}, от ${fmt(hotel.min_price)} ${sym}`}
+    <button
+      class={`hpopup-book-btn ${state === 'loading' ? 'loading' : ''} ${state === 'error' ? 'error' : ''}`}
+      onClick={handleClick}
+      disabled={state === 'loading'}
     >
-      <div class="hcard-photo-wrap">
-        <HotelPhoto src={hotel.picture_url} />
-        <div class="hcard-label">
-          <LabelIcon name={labelIcon} />
-          {label}
-        </div>
-      </div>
+      {state === 'loading' ? '…' : state === 'error' ? 'Ошибка' : 'Купить'}
+    </button>
+  );
+}
 
-      <div class="hcard-body">
-        <div class="hcard-name">{hotel.name}</div>
-        <div class="hcard-meta">
-          <span class="hcard-stars" aria-label={`${hotel.stars} звёзд`}>{stars(hotel.stars)}</span>
-          <span class={`hcard-rating ${rc}`} aria-label={`Рейтинг ${hotel.rating.toFixed(1)}`}>
-            {hotel.rating.toFixed(1)}
-          </span>
-          <span class="hcard-region">{hotel.region}</span>
-        </div>
-        <div class="hcard-price" aria-label={`от ${fmt(hotel.min_price)} ${sym}`}>
-          {fmt(hotel.min_price)}
-          <span class="hcard-price-sym">{sym}</span>
-        </div>
-        <div class="hcard-hint">
-          {opCount} {plural(opCount, 'оператор', 'оператора', 'операторов')} · {hotel.tours.length} туров
-          <span class="hcard-hint-caret" aria-hidden="true">{expanded ? ' ▲' : ' ▼'}</span>
-        </div>
-      </div>
+export function ToursPopup({ hotel, currency, onClose }) {
+  const [selectedTour, setSelectedTour] = useState(null);
+  const sym = CURRENCY_SYM[currency] || currency;
+  const altSym = currency === 'USD' ? CURRENCY_SYM.UZS : CURRENCY_SYM.USD;
+  const minPrice = currency === 'USD' ? hotel.min_price_usd : hotel.min_price_uzs;
+  const rc = ratingClass(hotel.rating);
+  const opGroups = groupByOperator(hotel.tours);
 
-      {expanded && (
-        <div class="hcard-tours" onClick={e => e.stopPropagation()}>
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return [createPortal(
+    <div class="hpopup-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={hotel.name}>
+      <div class="hpopup" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div class="hpopup-header">
+          <HotelThumbSmall src={hotel.picture_url} />
+          <div class="hpopup-header-info">
+            <div class="hpopup-name">{hotel.name}</div>
+            <div class="hpopup-meta">
+              <span class="hpopup-stars">{stars(hotel.stars)}</span>
+              <span class={`hpopup-rating ${rc}`}>{hotel.rating.toFixed(1)}</span>
+              <span class="hpopup-region">{hotel.region}</span>
+            </div>
+            <div class="hpopup-minprice">
+              от <strong>{fmt(minPrice)}</strong> {sym}
+            </div>
+          </div>
+          <button class="hpopup-close" onClick={onClose} aria-label="Закрыть">
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Operator groups */}
+        <div class="hpopup-body">
           {opGroups.map(([opName, tours]) => {
-            const tsym = CURRENCY_SYM[tours[0].currency] || tours[0].currency;
+            const opId = tours[0].operator_id;
+            const opMinPrice = currency === 'USD'
+              ? Math.min(...tours.map(t => t.price_usd))
+              : Math.min(...tours.map(t => t.price_uzs));
+
             return (
-              <div key={opName} class="hcard-op-group">
-                <div class="hcard-op-name">{opName}</div>
-                {tours.map((t, i) => (
-                  <div key={i} class="hcard-tour-row">
-                    <span class="hcard-tour-info">
-                      {t.date} · {t.nights}н · {t.meal_short}
-                      {t.is_charter ? ' · чартер' : ''}
-                    </span>
-                    <div class="hcard-tour-right">
-                      <span class="hcard-tour-price">{fmt(t.price)} {tsym}</span>
-                      <button
-                        class="hcard-flights-btn"
-                        title="Скоро: проверка рейсов"
-                        aria-label="Проверить рейсы (скоро)"
-                        disabled
-                        onClick={e => e.stopPropagation()}
+              <div key={opName} class="hpopup-op-group">
+                <div class="hpopup-op-header">
+                  <OperatorLogo id={opId} name={opName} />
+                  <span class="hpopup-op-name">{opName}</span>
+                  <span class="hpopup-op-minprice">от {fmt(opMinPrice)} {sym}</span>
+                </div>
+
+                <div class="hpopup-tour-list">
+                  {tours.map((t, i) => {
+                    const tPrice = currency === 'USD' ? t.price_usd : t.price_uzs;
+                    const tAlt   = currency === 'USD' ? t.price_uzs : t.price_usd;
+                    return (
+                      <div
+                        key={i}
+                        class="hpopup-tour-row hpopup-tour-row--clickable"
+                        onClick={() => setSelectedTour(t)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSelectedTour(t); }}
                       >
-                        <FlightIcon />
-                        Рейсы
-                        <span class="hcard-flights-soon">скоро</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        <div class="hpopup-tour-info">
+                          <span class="hpopup-tour-date">{t.date}</span>
+                          <span class="hpopup-tour-tags">
+                            <span class="hpopup-tag">{t.nights}н</span>
+                            <span class="hpopup-tag">{t.meal_short}</span>
+                            {t.is_charter && <span class="hpopup-tag hpopup-tag-charter">чартер</span>}
+                          </span>
+                        </div>
+                        <div class="hpopup-tour-right">
+                          <div class="hpopup-tour-price">
+                            {fmt(tPrice)} {sym}
+                            <span class="hpopup-tour-price-alt">{fmt(tAlt)} {altSym}</span>
+                          </div>
+                          <span class="hpopup-detail-hint">›</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
         </div>
-      )}
-    </article>
+      </div>
+    </div>,
+    document.body
+  ),
+  selectedTour && createPortal(
+    <TourDetailModal
+      tour={selectedTour}
+      hotel={hotel}
+      currency={currency}
+      onClose={() => setSelectedTour(null)}
+    />,
+    document.body
+  ),
+  ];
+}
+
+function HotelThumbSmall({ src }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div class="hpopup-thumb-ph" aria-hidden="true">
+        {ICONS.hotel}
+      </div>
+    );
+  }
+  return (
+    <img
+      class="hpopup-thumb"
+      src={src}
+      alt=""
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+export default function HotelCard({ hotel, label, labelIcon, currency }) {
+  const [open, setOpen] = useState(false);
+  const sym = CURRENCY_SYM[currency] || currency;
+  const altSym = currency === 'USD' ? CURRENCY_SYM.UZS : CURRENCY_SYM.USD;
+  const minPrice = currency === 'USD' ? hotel.min_price_usd : hotel.min_price_uzs;
+  const altPrice = currency === 'USD' ? hotel.min_price_uzs : hotel.min_price_usd;
+  const rc = ratingClass(hotel.rating);
+  const opCount = new Set(hotel.tours.map(t => t.operator_name)).size;
+
+  return (
+    <>
+      <article
+        class="hcard"
+        onClick={() => setOpen(true)}
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }}}
+        aria-label={`${hotel.name}, ${stars(hotel.stars)}, от ${fmt(minPrice)} ${sym}`}
+      >
+        <div class="hcard-photo-wrap">
+          <HotelPhoto src={hotel.picture_url} />
+          <div class="hcard-label">
+            <LabelIcon name={labelIcon} />
+            {label}
+          </div>
+        </div>
+
+        <div class="hcard-body">
+          <div class="hcard-name">{hotel.name}</div>
+          <div class="hcard-meta">
+            <span class="hcard-stars" aria-label={`${hotel.stars} звёзд`}>{stars(hotel.stars)}</span>
+            <span class={`hcard-rating ${rc}`} aria-label={`Рейтинг ${hotel.rating.toFixed(1)}`}>
+              {hotel.rating.toFixed(1)}
+            </span>
+            <span class="hcard-region">{hotel.region}</span>
+          </div>
+          <div class="hcard-price" aria-label={`от ${fmt(minPrice)} ${sym}`}>
+            {fmt(minPrice)}
+            <span class="hcard-price-sym">{sym}</span>
+            <span class="hcard-price-alt">{fmt(altPrice)} {altSym}</span>
+          </div>
+          <div class="hcard-hint">
+            {opCount} {plural(opCount, 'оператор', 'оператора', 'операторов')} · {hotel.tours.length} туров
+            <span class="hcard-hint-caret" aria-hidden="true"> ›</span>
+          </div>
+        </div>
+      </article>
+
+      {open && <ToursPopup hotel={hotel} currency={currency} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 

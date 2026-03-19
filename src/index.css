@@ -4,10 +4,11 @@
 
 :root {
   /* Brand */
-  --brand:        #2563EB;
-  --brand-dark:   #1D4ED8;
-  --brand-light:  #EFF6FF;
-  --brand-mid:    #DBEAFE;
+  --brand:        #00dfaa;
+  --brand-dark:   #00c99a;
+  --brand-light:  #e6fff7;
+  --brand-mid:    #c0f5e8;
+  --brand-text:   #0a3028;
   --accent:       #F97316;   /* CTA orange */
   --accent-dark:  #EA6F0D;
 
@@ -16,7 +17,7 @@
   --surface-2:    #F1F5F9;
   --card:         #FFFFFF;
   --border:       #E2E8F0;
-  --border-focus: #93C5FD;
+  --border-focus: #6fffda;
 
   /* Text */
   --text:         #1E293B;

@@ -1,4 +1,4 @@
-export const CURRENCY_SYM = { UZS: 'сум', RUB: '₽', USD: '$' };
+export const CURRENCY_SYM = { UZS: 'сум', USD: '$' };
 
 export const CHIPS = [
   'Турция, 2 недели, всё включено',
@@ -28,7 +28,7 @@ export function pickHighlights(hotels) {
   const byValue = [...hotels].sort((a, b) => b.value_score - a.value_score);
   const bestValue = byValue[0];
 
-  const byCheap = [...hotels].sort((a, b) => a.min_price - b.min_price);
+  const byCheap = [...hotels].sort((a, b) => a.min_price_uzs - b.min_price_uzs);
   const cheapest = byCheap.find(h => h.hotel_id !== bestValue.hotel_id) || byCheap[0];
 
   const byRating = [...hotels].sort((a, b) => b.rating - a.rating);

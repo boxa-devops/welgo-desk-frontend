@@ -1,3 +1,4 @@
+/* ── Card ── */
 .hcard {
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
@@ -139,6 +140,14 @@
   margin-left: 3px;
 }
 
+.hcard-price-alt {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
 .hcard-hint {
   font-size: 11px;
   color: var(--muted);
@@ -149,74 +158,342 @@
   gap: 2px;
 }
 
-.hcard-hint-caret { color: var(--brand); font-size: 9px; }
+.hcard-hint-caret { color: var(--brand); font-size: 13px; font-weight: 700; }
 
-/* Tours expand */
-.hcard-tours {
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  padding: 0;
-  cursor: default;
-}
-
-/* Operator group */
-.hcard-op-group {
-  border-bottom: 1px solid var(--border);
-  padding: 0 12px;
-}
-
-.hcard-op-group:last-child { border-bottom: none; }
-
-.hcard-op-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--brand);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 7px 0 4px;
-}
-
-.hcard-tour-row {
+/* ── Tours popup backdrop ── */
+.hpopup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
-  border-top: 1px solid var(--border);
-  gap: 8px;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: hpopup-fade-in 0.18s ease;
 }
 
-.hcard-op-group .hcard-tour-row:first-child { border-top: none; }
+@keyframes hpopup-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
-.hcard-tour-info {
+/* ── Popup modal ── */
+.hpopup {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0,0,0,.22), 0 4px 16px rgba(0,0,0,.1);
+  width: 100%;
+  max-width: 560px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: hpopup-slide-up 0.22s cubic-bezier(0.34, 1.36, 0.64, 1);
+}
+
+@keyframes hpopup-slide-up {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header ── */
+.hpopup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.hpopup-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.hpopup-thumb-ph {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--brand-mid) 0%, var(--surface-2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hpopup-thumb-ph svg {
+  width: 26px;
+  height: 26px;
+  stroke: var(--brand);
+  fill: none;
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.hpopup-header-info { flex: 1; min-width: 0; }
+
+.hpopup-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.hpopup-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+
+.hpopup-stars { font-size: 11px; color: var(--star); letter-spacing: 0.5px; }
+
+.hpopup-rating {
   font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 5px;
+  line-height: 1.6;
+}
+.hpopup-rating.high { background: var(--green); }
+.hpopup-rating.mid  { background: var(--amber); }
+.hpopup-rating.low  { background: var(--muted); }
+
+.hpopup-region {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.hpopup-minprice {
+  font-size: 13px;
   color: var(--text-2);
   font-weight: 400;
+}
+.hpopup-minprice strong {
+  color: var(--text);
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.hpopup-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+  margin-left: auto;
+}
+
+.hpopup-close:hover {
+  background: var(--red-light);
+  color: var(--red);
+  border-color: #FECACA;
+}
+
+/* ── Body (scrollable) ── */
+.hpopup-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+
+.hpopup-body::-webkit-scrollbar { width: 5px; }
+.hpopup-body::-webkit-scrollbar-track { background: transparent; }
+.hpopup-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── Operator group ── */
+.hpopup-op-group {
+  padding: 0 18px 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.hpopup-op-group:last-child { border-bottom: none; }
+
+.hpopup-op-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 10px;
+}
+
+.hpopup-op-logo {
+  width: 60px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  background: #fff;
+  flex-shrink: 0;
+  padding: 2px 4px;
+}
+
+.hpopup-op-logo-ph {
+  background: var(--brand-light);
+  color: var(--brand-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-color: var(--brand-mid);
+}
+
+.hpopup-op-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hpopup-op-minprice {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--brand-text);
+  background: var(--brand-light);
+  border: 1px solid var(--brand-mid);
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Tour rows ── */
+.hpopup-tour-list { padding-bottom: 8px; }
+
+.hpopup-tour-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-top: 1px solid var(--surface-2);
+}
+
+.hpopup-tour-row--clickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+.hpopup-tour-row--clickable:hover { background: var(--surface); }
+
+.hpopup-detail-hint {
+  font-size: 18px;
+  color: var(--brand);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.hpopup-tour-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex: 1;
   min-width: 0;
 }
 
-.hcard-tour-right {
+.hpopup-tour-date {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hpopup-tour-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.hpopup-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--surface-2);
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.hpopup-tag-charter {
+  color: var(--brand-text);
+  background: var(--brand-light);
+}
+
+.hpopup-tour-right {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.hcard-tour-price {
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
+.hpopup-tour-price {
+  font-size: 14px;
+  font-weight: 800;
   color: var(--text);
+  text-align: right;
+  white-space: nowrap;
 }
 
-/* "Check flights" placeholder button */
-.hcard-flights-btn {
+.hpopup-tour-price-alt {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Book button */
+.hpopup-book-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: var(--brand-text);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition);
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.hpopup-book-btn:hover:not(:disabled) { background: var(--brand-dark); }
+.hpopup-book-btn:disabled { opacity: 0.6; cursor: wait; }
+.hpopup-book-btn.error { background: var(--red, #ef4444); }
+
+/* Flights placeholder button */
+.hpopup-flights-btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   font-size: 11px;
   font-weight: 600;
@@ -227,12 +504,3 @@
   opacity: 0.75;
 }
 
-.hcard-flights-soon {
-  font-size: 10px;
-  font-weight: 700;
-  background: var(--brand-light);
-  color: var(--brand);
-  padding: 1px 5px;
-  border-radius: 4px;
-  letter-spacing: 0.02em;
-}

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'preact/hooks';
 import OperatorsPopover from './OperatorsPopover.jsx';
 import './InputArea.css';
 
-const CURRENCIES = ['UZS', 'RUB', 'USD'];
+const CURRENCIES = ['UZS', 'USD'];
 
 const SendIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"

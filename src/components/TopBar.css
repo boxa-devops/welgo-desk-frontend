@@ -35,7 +35,7 @@
 .topbar-logo-icon svg {
   width: 16px;
   height: 16px;
-  stroke: #fff;
+  stroke: var(--brand-text);
   fill: none;
   stroke-width: 2.2;
   stroke-linecap: round;

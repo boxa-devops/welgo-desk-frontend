@@ -49,10 +49,12 @@
   border-bottom: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: background var(--transition);
-  cursor: default;
+  cursor: pointer;
+  outline: none;
 }
 
 .rr:hover { background: var(--surface); }
+.rr:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 .rr:last-child { border-bottom: none; }
 
 .rr-num {
@@ -120,4 +122,25 @@
   flex-shrink: 0;
   color: var(--text);
   letter-spacing: -0.01em;
+  text-align: right;
+}
+
+.rr-price-alt {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.rr-caret {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: color var(--transition), transform var(--transition);
+}
+
+.rr:hover .rr-caret {
+  color: var(--brand);
+  transform: translateX(2px);
 }

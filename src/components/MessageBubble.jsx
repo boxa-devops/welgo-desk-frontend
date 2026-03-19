@@ -39,7 +39,18 @@ function SearchingContent({ statusText, progress }) {
   );
 }
 
-function DoneContent({ hotels, fromCache, currency }) {
+function DoneContent({ hotels, fromCache, currency, hotelsExpired, expiredMessage }) {
+  if (hotelsExpired) {
+    return (
+      <div class="ai-error" role="alert">
+        <div class="ai-error-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <span>{expiredMessage}</span>
+      </div>
+    );
+  }
+
   if (!hotels || hotels.length === 0) {
     return (
       <div class="ai-error" role="alert">
@@ -53,14 +64,18 @@ function DoneContent({ hotels, fromCache, currency }) {
 
   const { bestValue, cheapest, topRated } = pickHighlights(hotels);
   const sym = CURRENCY_SYM[currency] || currency;
-  const minP = Math.min(...hotels.map(h => h.min_price));
+  const altSym = currency === 'USD' ? CURRENCY_SYM.UZS : CURRENCY_SYM.USD;
+  const priceKey = currency === 'USD' ? 'min_price_usd' : 'min_price_uzs';
+  const altKey = currency === 'USD' ? 'min_price_uzs' : 'min_price_usd';
+  const minP = Math.min(...hotels.map(h => h[priceKey]));
+  const minPAlt = Math.min(...hotels.map(h => h[altKey]));
   const countryStr = hotels[0]?.country ? ` в ${hotels[0].country}` : '';
 
   return (
     <>
       <p class="ai-summary">
         Нашёл <strong>{hotels.length} {plural(hotels.length, 'отель', 'отеля', 'отелей')}</strong>{countryStr}.{' '}
-        Минимальная цена — <strong>{fmt(minP)} {sym}</strong>. Вот что рекомендую:
+        Минимальная цена — <strong>{fmt(minP)} {sym}</strong> <span class="ai-summary-alt">({fmt(minPAlt)} {altSym})</span>. Вот что рекомендую:
         {fromCache && <span class="cache-badge" title="Результат взят из кэша">из кэша</span>}
       </p>
       <div class="highlight-cards">
@@ -101,7 +116,16 @@ export default function MessageBubble({ message, currency }) {
           <SearchingContent statusText={message.statusText} progress={message.progress} />
         )}
         {message.state === 'done' && (
-          <DoneContent hotels={message.hotels} fromCache={message.fromCache} currency={currency} />
+          <DoneContent
+            hotels={message.hotels}
+            fromCache={message.fromCache}
+            currency={currency}
+            hotelsExpired={message.hotels_expired}
+            expiredMessage={message.expired_message}
+          />
+        )}
+        {message.state === 'text' && (
+          <p class="ai-text-reply">{message.text}</p>
         )}
         {message.state === 'error' && (
           <ErrorContent error={message.error} />
