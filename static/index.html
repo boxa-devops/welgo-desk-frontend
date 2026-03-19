@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welgosk — AI-поиск туров</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #2563eb;
+      --brand-dark: #1d4ed8;
+      --brand-light: #eff6ff;
+      --surface: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --star: #f59e0b;
+      --green: #16a34a;
+      --red: #dc2626;
+      --radius: 12px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* ── App shell ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Top bar ── */
+    #topbar {
+      height: 52px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 10px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .logo { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -.5px; }
+    .logo span { color: var(--brand); }
+    .tagline { font-size: 12px; color: var(--muted); }
+
+    /* ── Chat scroll area ── */
+    #chat-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 16px 16px;
+      scroll-behavior: smooth;
+    }
+    #chat-messages {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* ── Welcome ── */
+    .welcome-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 48px 20px 32px;
+      gap: 14px;
+    }
+    .welcome-icon { font-size: 56px; line-height: 1; }
+    .welcome-title { font-size: 26px; font-weight: 700; color: var(--text); }
+    .welcome-sub { font-size: 15px; color: var(--muted); max-width: 420px; line-height: 1.6; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+    .chip {
+      padding: 8px 15px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .chip:hover { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+
+    /* ── User bubble ── */
+    .msg-user { display: flex; justify-content: flex-end; }
+    .msg-user-bubble {
+      background: var(--brand);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 18px 18px 4px 18px;
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 72%;
+      word-break: break-word;
+    }
+
+    /* ── AI bubble ── */
+    .msg-ai { display: flex; gap: 10px; align-items: flex-start; }
+    .ai-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .ai-bubble {
+      flex: 1;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 4px 18px 18px 18px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      min-width: 0;
+    }
+
+    /* inline progress */
+    .ai-status {
+      font-size: 13px;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+    .bubble-progress {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .bubble-progress-bar {
+      height: 100%;
+      background: var(--brand);
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+    .bubble-progress-bar.indeterminate {
+      width: 35% !important;
+      animation: indeterminate 1.4s ease-in-out infinite;
+    }
+    @keyframes indeterminate {
+      0%   { transform: translateX(-120%); }
+      100% { transform: translateX(360%); }
+    }
+
+    /* AI summary */
+    .ai-summary {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .cache-badge {
+      display: inline-block;
+      font-size: 11px;
+      background: #fef9c3;
+      color: #854d0e;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── Highlight cards ── */
+    .highlight-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 640px) { .highlight-cards { grid-template-columns: 1fr; } }
+
+    .hcard {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow .15s, transform .12s;
+      background: #fff;
+    }
+    .hcard:hover { box-shadow: 0 4px 18px rgba(0,0,0,.1); transform: translateY(-2px); }
+
+    .hcard-photo-wrap { position: relative; }
+    .hcard-photo {
+      width: 100%; height: 104px;
+      object-fit: cover; display: block;
+    }
+    .hcard-photo-ph {
+      width: 100%; height: 104px;
+      background: linear-gradient(135deg,#e0e7ff,#f1f5f9);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    .hcard-label {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(0,0,0,.62);
+      color: #fff;
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+      white-space: nowrap;
+    }
+
+    .hcard-body { padding: 10px 12px; }
+    .hcard-name { font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 5px; }
+    .hcard-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+    .hcard-stars { font-size: 11px; color: var(--star); }
+    .hcard-rating {
+      font-size: 11px; font-weight: 700; color: #fff;
+      background: var(--green); padding: 1px 6px; border-radius: 5px;
+    }
+    .hcard-rating.mid { background: #ca8a04; }
+    .hcard-rating.low { background: var(--muted); }
+    .hcard-region { font-size: 11px; color: var(--muted); }
+    .hcard-price { font-size: 18px; font-weight: 700; color: var(--text); }
+    .hcard-price sup { font-size: 12px; font-weight: 400; color: var(--muted); }
+    .hcard-hint { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    .hcard-tours { display: none; border-top: 1px solid var(--border); padding: 8px 12px; }
+    .hcard.expanded .hcard-tours { display: block; }
+    .hcard-tour-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; border-bottom: 1px solid var(--border); gap: 8px;
+    }
+    .hcard-tour-row:last-child { border-bottom: none; }
+    .hcard-tour-info { font-size: 12px; color: var(--muted); }
+    .hcard-tour-price { font-size: 13px; font-weight: 700; white-space: nowrap; }
+
+    /* ── All results ── */
+    .all-results-section { margin-top: 2px; }
+    .all-results-toggle {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; background: none;
+      border: none; border-top: 1px solid var(--border);
+      padding: 10px 0 6px;
+      font-size: 13px; font-weight: 600;
+      color: var(--muted); cursor: pointer;
+      font-family: inherit; text-align: left;
+      transition: color .15s;
+    }
+    .all-results-toggle:hover { color: var(--text); }
+    .all-toggle-arrow { font-size: 10px; transition: transform .2s; margin-left: auto; }
+    .all-results-toggle.open .all-toggle-arrow { transform: rotate(180deg); }
+    .all-results-list { display: none; }
+    .all-results-toggle.open + .all-results-list { display: flex; flex-direction: column; }
+
+    .result-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 4px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; border-radius: 6px;
+      transition: background .1s;
+    }
+    .result-row:hover { background: var(--surface); }
+    .result-row:last-child { border-bottom: none; }
+    .rr-num { font-size: 11px; color: var(--muted); width: 18px; text-align: right; flex-shrink: 0; }
+    .rr-thumb {
+      width: 46px; height: 36px;
+      border-radius: 6px; object-fit: cover;
+      flex-shrink: 0;
+    }
+    .rr-thumb-ph {
+      width: 46px; height: 36px; border-radius: 6px;
+      background: linear-gradient(135deg,#e0e7ff,#f1f5f9);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .rr-info { flex: 1; min-width: 0; }
+    .rr-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rr-sub { font-size: 11px; color: var(--muted); }
+    .rr-stars-s { color: var(--star); }
+    .rr-rating-s { font-weight: 700; color: var(--green); }
+    .rr-price { font-size: 14px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+
+    /* ── Error inside bubble ── */
+    .ai-error {
+      font-size: 14px;
+      color: var(--red);
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    /* ── Input bar ── */
+    #input-bar {
+      flex-shrink: 0;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      padding: 10px 16px 12px;
+      box-shadow: 0 -4px 24px rgba(0,0,0,.06);
+      z-index: 20;
+    }
+    #input-row-primary {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+    }
+
+    #departure-select {
+      padding: 7px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      max-width: 132px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #departure-select:focus { border-color: var(--brand); }
+
+    .pill-group {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .pill-btn {
+      padding: 6px 9px;
+      font-size: 12px; font-weight: 500;
+      border: none; background: transparent;
+      color: var(--muted); cursor: pointer;
+      font-family: inherit;
+      transition: background .12s, color .12s;
+    }
+    .pill-btn.active { background: var(--brand); color: #fff; }
+
+    /* Operators popover anchor */
+    #operators-wrap { position: relative; flex-shrink: 0; }
+    #operators-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 10px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 12px; font-weight: 500;
+      color: var(--muted); background: var(--surface);
+      cursor: pointer; font-family: inherit;
+      white-space: nowrap;
+      transition: all .15s;
+    }
+    #operators-btn:hover, #operators-btn.filtered {
+      border-color: var(--brand); color: var(--brand); background: var(--brand-light);
+    }
+
+    .popover {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      width: 260px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,.13);
+      z-index: 50;
+      overflow: hidden;
+      display: none;
+    }
+    .popover.open { display: block; }
+    .popover-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; font-weight: 600;
+    }
+    .popover-acts { display: flex; gap: 10px; }
+    .popover-acts button {
+      font-size: 12px; color: var(--brand);
+      background: none; border: none; cursor: pointer;
+      font-family: inherit;
+    }
+    .op-scroll { max-height: 250px; overflow-y: auto; padding: 4px 0; }
+    .op-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; cursor: pointer;
+      transition: background .1s;
+    }
+    .op-item:hover { background: var(--surface); }
+    .op-item input[type=checkbox] { accent-color: var(--brand); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
+    .op-item label { font-size: 13px; cursor: pointer; flex: 1; }
+    .op-cnt { font-size: 11px; color: var(--muted); min-width: 20px; text-align: right; }
+
+    #popover-overlay { position: fixed; inset: 0; z-index: 40; display: none; }
+    #popover-overlay.open { display: block; }
+
+    /* Chat textarea */
+    #chat-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      min-width: 0;
+      resize: none;
+      overflow-y: hidden;
+      line-height: 1.55;
+      min-height: 48px;
+      max-height: 180px;
+      transition: border-color .15s;
+      display: block;
+    }
+    #chat-input:focus { border-color: var(--brand); }
+
+    /* Send button */
+    #send-btn {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--brand); border: none;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, transform .1s;
+    }
+    #send-btn:hover { background: var(--brand-dark); }
+    #send-btn:active { transform: scale(.94); }
+    #send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    #send-btn svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Advanced toggle */
+    #adv-toggle {
+      width: 36px; height: 36px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: transparent; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    #adv-toggle:hover, #adv-toggle.open {
+      background: var(--brand-light); color: var(--brand); border-color: var(--brand);
+    }
+    #adv-toggle svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; }
+
+    /* Advanced row */
+    #input-row-adv {
+      max-width: 780px;
+      margin: 8px auto 0;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    #input-row-adv.open { display: flex; }
+    .adv-field { display: flex; align-items: center; gap: 4px; }
+    .adv-field label { font-size: 11px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+    .adv-field input, .adv-field select {
+      padding: 5px 7px;
+      border: 1px solid var(--border); border-radius: 7px;
+      font-size: 13px; font-family: inherit;
+      width: 84px; outline: none;
+    }
+    .adv-field input[type=date] { width: 110px; }
+    .adv-field input:focus, .adv-field select:focus { border-color: var(--brand); }
+    .adv-sep { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <div class="logo">Welgo<span>sk</span></div>
+    <div class="tagline">AI-поиск туров</div>
+  </header>
+
+  <div id="chat-scroll">
+    <div id="chat-messages"></div>
+  </div>
+
+  <div id="input-bar">
+    <div id="input-row-primary">
+
+      <select id="departure-select" title="Город вылета">
+        <option value="">Вылет…</option>
+      </select>
+
+      <div class="pill-group" id="currency-pills">
+        <button class="pill-btn active" data-cur="UZS">UZS</button>
+        <button class="pill-btn" data-cur="RUB">RUB</button>
+        <button class="pill-btn" data-cur="USD">USD</button>
+      </div>
+
+      <div id="operators-wrap">
+        <button id="operators-btn" title="Операторы">
+          🏢 <span id="op-badge">Все</span>
+        </button>
+        <div class="popover" id="op-popover">
+          <div class="popover-head">
+            <span>Операторы</span>
+            <div class="popover-acts">
+              <button id="op-all">Все</button>
+              <button id="op-none">Снять</button>
+            </div>
+          </div>
+          <div class="op-scroll" id="op-list"></div>
+        </div>
+      </div>
+
+      <textarea id="chat-input" rows="1" placeholder="Куда хотите поехать?" autocomplete="off"></textarea>
+
+      <button id="send-btn" title="Отправить">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+
+      <button id="adv-toggle" title="Параметры">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2" fill="white" stroke="currentColor"/><circle cx="16" cy="12" r="2" fill="white" stroke="currentColor"/><circle cx="10" cy="18" r="2" fill="white" stroke="currentColor"/></svg>
+      </button>
+    </div>
+
+    <div id="input-row-adv">
+      <div class="adv-field">
+        <label>С</label>
+        <input type="date" id="adv-date-from" />
+      </div>
+      <div class="adv-field">
+        <label>По</label>
+        <input type="date" id="adv-date-to" />
+      </div>
+      <div class="adv-field">
+        <label>Ночей</label>
+        <input type="number" id="adv-nights-from" min="1" max="30" placeholder="7" />
+        <span class="adv-sep">—</span>
+        <input type="number" id="adv-nights-to" min="1" max="30" placeholder="14" />
+      </div>
+      <div class="adv-field">
+        <label>Взрослых</label>
+        <input type="number" id="adv-adults" min="1" max="6" value="2" />
+      </div>
+      <div class="adv-field">
+        <label>Звёзды</label>
+        <select id="adv-stars">
+          <option value="">Любые</option>
+          <option value="3">3★</option>
+          <option value="4">4★</option>
+          <option value="5">5★</option>
+        </select>
+      </div>
+      <div class="adv-field">
+        <label>До (сум)</label>
+        <input type="number" id="adv-price-to" step="100000" placeholder="5 000 000" style="width:100px" />
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="popover-overlay"></div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const CURRENCY_SYM = { UZS: 'сум', RUB: '₽', USD: '$' };
+const CHIPS = [
+  'Турция, 2 недели, всё включено',
+  'ОАЭ, 7 ночей, 4 звезды',
+  'Таиланд, пляж',
+  'Мальдивы, медовый месяц',
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+let catalog = { operators: [], departures: [] };
+let currency = 'UZS';
+let searching = false;
+let advOpen = false;
+let popoverOpen = false;
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    catalog = await fetch('/api/catalog').then(r => r.json());
+    populateDepartures();
+    renderOpList();
+  } catch (e) {
+    console.error('Catalog load failed', e);
+  }
+  renderWelcome();
+  bindAll();
+});
+
+function populateDepartures() {
+  const sel = document.getElementById('departure-select');
+  sel.innerHTML = '<option value="">Вылет…</option>' +
+    catalog.departures.map(d =>
+      `<option value="${d.id}">${esc(d.name)}</option>`
+    ).join('');
+}
+
+function renderOpList() {
+  document.getElementById('op-list').innerHTML =
+    catalog.operators.map(op => `
+      <div class="op-item">
+        <input type="checkbox" id="opck-${op.id}" value="${op.id}" checked />
+        <label for="opck-${op.id}">${esc(op.name)}</label>
+        <span class="op-cnt" id="opn-${op.id}"></span>
+      </div>
+    `).join('');
+}
+
+// ── Bind ───────────────────────────────────────────────────────────────────
+function bindAll() {
+  const input = document.getElementById('chat-input');
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+  });
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+  // Currency
+  document.getElementById('currency-pills').addEventListener('click', e => {
+    const btn = e.target.closest('.pill-btn');
+    if (!btn) return;
+    currency = btn.dataset.cur;
+    document.querySelectorAll('.pill-btn').forEach(b => b.classList.toggle('active', b.dataset.cur === currency));
+  });
+
+  // Operators popover
+  document.getElementById('operators-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    popoverOpen = !popoverOpen;
+    document.getElementById('op-popover').classList.toggle('open', popoverOpen);
+    document.getElementById('popover-overlay').classList.toggle('open', popoverOpen);
+  });
+  document.getElementById('popover-overlay').addEventListener('click', closePopover);
+  document.getElementById('op-all').addEventListener('click', () => {
+    document.querySelectorAll('#op-list input').forEach(cb => cb.checked = true);
+    updateOpBadge();
+  });
+  document.getElementById('op-none').addEventListener('click', () => {
+    document.querySelectorAll('#op-list input').forEach(cb => cb.checked = false);
+    updateOpBadge();
+  });
+  document.getElementById('op-list').addEventListener('change', updateOpBadge);
+
+  // Advanced
+  document.getElementById('adv-toggle').addEventListener('click', () => {
+    advOpen = !advOpen;
+    document.getElementById('input-row-adv').classList.toggle('open', advOpen);
+    document.getElementById('adv-toggle').classList.toggle('open', advOpen);
+  });
+
+  // Chips (delegated)
+  document.getElementById('chat-messages').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.getElementById('chat-input').value = chip.textContent.trim();
+    sendMessage();
+  });
+}
+
+function closePopover() {
+  popoverOpen = false;
+  document.getElementById('op-popover').classList.remove('open');
+  document.getElementById('popover-overlay').classList.remove('open');
+}
+
+function updateOpBadge() {
+  const all = document.querySelectorAll('#op-list input');
+  const checked = [...all].filter(cb => cb.checked).length;
+  const badge = document.getElementById('op-badge');
+  const btn = document.getElementById('operators-btn');
+  badge.textContent = checked === all.length ? 'Все' : String(checked);
+  btn.classList.toggle('filtered', checked !== all.length);
+}
+
+function getCheckedOpIds() {
+  return [...document.querySelectorAll('#op-list input:checked')].map(cb => parseInt(cb.value));
+}
+
+// ── Welcome ────────────────────────────────────────────────────────────────
+function renderWelcome() {
+  const msgs = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.id = 'welcome';
+  el.className = 'welcome-wrap';
+  el.innerHTML = `
+    <div class="welcome-icon">✈️</div>
+    <div class="welcome-title">Привет! Я помогу найти тур</div>
+    <div class="welcome-sub">Расскажите, куда хотите поехать — я найду лучшие предложения от всех операторов.</div>
+    <div class="chip-row">
+      ${CHIPS.map(c => `<button class="chip">${esc(c)}</button>`).join('')}
+    </div>
+  `;
+  msgs.appendChild(el);
+}
+
+// ── Send ───────────────────────────────────────────────────────────────────
+function sendMessage() {
+  if (searching) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  appendUserBubble(text);
+  const bubbleEl = appendAiBubble();
+  doSearch(text, bubbleEl);
+}
+
+function buildReq(rawMessage) {
+  const opIds = getCheckedOpIds();
+  const allIds = catalog.operators.map(o => o.id);
+  return {
+    raw_message: rawMessage,
+    departure: document.getElementById('departure-select').value || null,
+    currency,
+    adults: parseInt(document.getElementById('adv-adults').value) || 2,
+    date_from: document.getElementById('adv-date-from').value || null,
+    date_to: document.getElementById('adv-date-to').value || null,
+    nights_from: parseInt(document.getElementById('adv-nights-from').value) || null,
+    nights_to: parseInt(document.getElementById('adv-nights-to').value) || null,
+    hotel_category: parseInt(document.getElementById('adv-stars').value) || null,
+    price_to: parseInt(document.getElementById('adv-price-to').value) || null,
+    sort_by: 'value',
+    operator_ids: opIds.length < allIds.length ? opIds : null,
+  };
+}
+
+// ── Bubble helpers ─────────────────────────────────────────────────────────
+function appendUserBubble(text) {
+  const el = document.createElement('div');
+  el.className = 'msg-user';
+  el.innerHTML = `<div class="msg-user-bubble">${esc(text)}</div>`;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollEnd();
+}
+
+function appendAiBubble() {
+  const el = document.createElement('div');
+  el.className = 'msg-ai';
+  el.innerHTML = `
+    <div class="ai-avatar">W</div>
+    <div class="ai-bubble">
+      <div class="ai-status">Подключаемся к операторам…</div>
+      <div class="bubble-progress">
+        <div class="bubble-progress-bar indeterminate"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollEnd();
+  return el;
+}
+
+function updateBubble(bubbleEl, chunk) {
+  const inner = bubbleEl.querySelector('.ai-bubble');
+  const statusEl = inner.querySelector('.ai-status');
+  const barEl = inner.querySelector('.bubble-progress-bar');
+  if (statusEl) statusEl.textContent = chunk.status_text || 'Поиск…';
+  if (barEl && chunk.progress > 0) {
+    barEl.classList.remove('indeterminate');
+    barEl.style.width = chunk.progress + '%';
+  }
+  scrollEnd();
+}
+
+function finalizeBubble(bubbleEl, hotels, fromCache) {
+  const inner = bubbleEl.querySelector('.ai-bubble');
+  if (!hotels.length) {
+    inner.innerHTML = `<div class="ai-error">По вашему запросу ничего не найдено. Попробуйте изменить параметры поиска.</div>`;
+    scrollEnd();
+    return;
+  }
+
+  const picks = pickHighlights(hotels);
+  const sym = CURRENCY_SYM[currency] || currency;
+  const minP = Math.min(...hotels.map(h => h.min_price));
+  const country = hotels[0]?.country || '';
+  const countryStr = country ? ` в ${country}` : '';
+  const cacheBadge = fromCache ? '<span class="cache-badge">из кэша</span>' : '';
+
+  inner.innerHTML = `
+    <div class="ai-summary">
+      Нашёл <strong>${hotels.length} отелей</strong>${countryStr}.
+      Минимальная цена — <strong>${fmt(minP)} ${esc(sym)}</strong>. Вот что рекомендую:${cacheBadge}
+    </div>
+    <div class="highlight-cards">
+      ${hcardHTML(picks.bestValue, '🏆 Лучший выбор')}
+      ${hcardHTML(picks.cheapest,  '💰 Дешевле всего')}
+      ${hcardHTML(picks.topRated,  '⭐ Высший рейтинг')}
+    </div>
+    ${allResultsHTML(hotels)}
+  `;
+
+  inner.querySelectorAll('.hcard').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('expanded'));
+  });
+
+  const toggle = inner.querySelector('.all-results-toggle');
+  if (toggle) toggle.addEventListener('click', () => toggle.classList.toggle('open'));
+
+  scrollEnd();
+}
+
+function setBubbleError(bubbleEl, msg) {
+  const inner = bubbleEl.querySelector('.ai-bubble');
+  inner.innerHTML = `<div class="ai-error">Ошибка: ${esc(msg)}</div>`;
+  scrollEnd();
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────
+async function doSearch(rawMessage, bubbleEl) {
+  searching = true;
+  document.getElementById('send-btn').disabled = true;
+
+  const req = buildReq(rawMessage);
+  let lastHotels = [];
+  let lastFromCache = false;
+
+  try {
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+
+    if (!resp.ok) {
+      setBubbleError(bubbleEl, await resp.text());
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        let chunk;
+        try { chunk = JSON.parse(raw); } catch { continue; }
+
+        if (chunk.error) { setBubbleError(bubbleEl, chunk.error); return; }
+        if (chunk.done) {
+          finalizeBubble(bubbleEl, lastHotels, lastFromCache);
+          updateOpCounts([]);
+          return;
+        }
+
+        lastHotels = chunk.hotels || [];
+        lastFromCache = chunk.from_cache || false;
+        updateBubble(bubbleEl, chunk);
+        updateOpCounts(chunk.operators_found || []);
+      }
+    }
+
+    // If stream ended without done event
+    finalizeBubble(bubbleEl, lastHotels, lastFromCache);
+  } catch (e) {
+    setBubbleError(bubbleEl, e.message);
+  } finally {
+    searching = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+// ── Picks ──────────────────────────────────────────────────────────────────
+function pickHighlights(hotels) {
+  if (!hotels.length) return {};
+  const byValue = [...hotels].sort((a, b) => b.value_score - a.value_score);
+  const bestValue = byValue[0];
+
+  const byCheap = [...hotels].sort((a, b) => a.min_price - b.min_price);
+  const cheapest = byCheap.find(h => h.hotel_id !== bestValue.hotel_id) || byCheap[0];
+
+  const byRating = [...hotels].sort((a, b) => b.rating - a.rating);
+  const used = new Set([bestValue.hotel_id, cheapest.hotel_id]);
+  const topRated = byRating.find(h => !used.has(h.hotel_id)) || byRating[0];
+
+  return { bestValue, cheapest, topRated };
+}
+
+// ── Card HTML ──────────────────────────────────────────────────────────────
+function hcardHTML(hotel, label) {
+  if (!hotel) return '';
+  const stars = '★'.repeat(hotel.stars) + '☆'.repeat(Math.max(0, 5 - hotel.stars));
+  const rc = hotel.rating >= 8 ? '' : hotel.rating >= 6 ? ' mid' : ' low';
+  const sym = CURRENCY_SYM[hotel.currency] || hotel.currency;
+
+  const imgHTML = hotel.picture_url
+    ? `<img class="hcard-photo" src="${esc(hotel.picture_url)}" loading="lazy"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+       <div class="hcard-photo-ph" style="display:none">🏨</div>`
+    : `<div class="hcard-photo-ph">🏨</div>`;
+
+  const tours = hotel.tours.slice(0, 5).map(t => `
+    <div class="hcard-tour-row">
+      <span class="hcard-tour-info">${esc(t.operator_name)} · ${esc(t.date)} · ${t.nights}н · ${esc(t.meal_short)}${t.is_charter ? ' · чартер' : ''}</span>
+      <span class="hcard-tour-price">${fmt(t.price)} ${esc(CURRENCY_SYM[t.currency] || t.currency)}</span>
+    </div>
+  `).join('');
+
+  return `
+    <div class="hcard">
+      <div class="hcard-photo-wrap">
+        ${imgHTML}
+        <div class="hcard-label">${label}</div>
+      </div>
+      <div class="hcard-body">
+        <div class="hcard-name">${esc(hotel.name)}</div>
+        <div class="hcard-meta">
+          <span class="hcard-stars">${stars}</span>
+          <span class="hcard-rating${rc}">${hotel.rating.toFixed(1)}</span>
+          <span class="hcard-region">${esc(hotel.region)}</span>
+        </div>
+        <div class="hcard-price">${fmt(hotel.min_price)} <sup>${esc(sym)}</sup></div>
+        <div class="hcard-hint">${hotel.tours.length} вариантов · нажмите для деталей</div>
+      </div>
+      <div class="hcard-tours">${tours}</div>
+    </div>
+  `;
+}
+
+function allResultsHTML(hotels) {
+  if (hotels.length <= 3) return '';
+  const rows = hotels.map((h, i) => {
+    const sym = CURRENCY_SYM[h.currency] || h.currency;
+    const thumb = h.picture_url
+      ? `<img class="rr-thumb" src="${esc(h.picture_url)}" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+         <div class="rr-thumb-ph" style="display:none">🏨</div>`
+      : `<div class="rr-thumb-ph">🏨</div>`;
+    return `
+      <div class="result-row">
+        <span class="rr-num">${i + 1}</span>
+        ${thumb}
+        <div class="rr-info">
+          <div class="rr-name">${esc(h.name)}</div>
+          <div class="rr-sub">
+            <span class="rr-stars-s">${'★'.repeat(h.stars)}</span>
+            <span class="rr-rating-s"> ${h.rating.toFixed(1)}</span>
+            · ${esc(h.region)}
+          </div>
+        </div>
+        <div class="rr-price">${fmt(h.min_price)} ${esc(sym)}</div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="all-results-section">
+      <button class="all-results-toggle">
+        <span>Все результаты (${hotels.length})</span>
+        <span class="all-toggle-arrow">▼</span>
+      </button>
+      <div class="all-results-list">${rows}</div>
+    </div>
+  `;
+}
+
+// ── Operator counts ────────────────────────────────────────────────────────
+function updateOpCounts(found) {
+  document.querySelectorAll('[id^="opn-"]').forEach(el => el.textContent = '');
+  found.forEach(op => {
+    const el = document.getElementById(`opn-${op.id}`);
+    if (el) el.textContent = op.tour_count;
+  });
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function scrollEnd() {
+  requestAnimationFrame(() => {
+    const s = document.getElementById('chat-scroll');
+    s.scrollTop = s.scrollHeight;
+  });
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

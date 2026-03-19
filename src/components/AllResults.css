@@ -1,0 +1,123 @@
+.all-results { margin-top: 4px; }
+
+.all-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: 11px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  text-align: left;
+  transition: color var(--transition);
+  outline: none;
+}
+
+.all-toggle:hover { color: var(--text); }
+
+.all-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.all-toggle-arrow {
+  font-size: 10px;
+  margin-left: auto;
+  transition: transform 0.2s ease;
+  color: var(--muted);
+}
+
+.all-toggle.open .all-toggle-arrow { transform: rotate(180deg); }
+
+.all-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Row */
+.rr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+  cursor: default;
+}
+
+.rr:hover { background: var(--surface); }
+.rr:last-child { border-bottom: none; }
+
+.rr-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  width: 20px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.rr-thumb {
+  width: 46px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.rr-thumb-ph {
+  width: 46px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--brand-mid), var(--surface-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rr-thumb-ph svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--brand);
+  fill: none;
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.rr-info { flex: 1; min-width: 0; }
+
+.rr-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.rr-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.rr-stars { color: var(--star); letter-spacing: 0.5px; }
+.rr-rating { font-weight: 700; color: var(--green); }
+
+.rr-price {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}

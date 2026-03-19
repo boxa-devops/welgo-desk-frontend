@@ -1,0 +1,297 @@
+.input-bar {
+  flex-shrink: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px 12px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.05);
+  z-index: 20;
+}
+
+.input-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Main row: textarea + send ── */
+.input-main {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  min-width: 0;
+  resize: none;
+  overflow-y: hidden;
+  line-height: 1.55;
+  min-height: 48px;
+  max-height: 160px;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+  display: block;
+}
+
+.chat-input::placeholder { color: var(--muted); }
+
+.chat-input:hover:not(:disabled) { border-color: #CBD5E1; }
+
+.chat-input:focus {
+  border-color: var(--brand);
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+.chat-input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Send button */
+.send-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  outline: none;
+  color: #fff;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: var(--accent-dark);
+  box-shadow: 0 4px 14px rgba(249,115,22,.4);
+}
+
+.send-btn:active:not(:disabled) { transform: scale(0.92); }
+.send-btn:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.65; }
+
+.send-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.send-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.send-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  display: block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Controls strip ── */
+.controls-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: 32px;
+}
+
+.ctrl-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.ctrl-spacer { flex: 1; }
+
+/* Departure select with icon */
+.ctrl-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px 0 10px;
+  height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--transition);
+  flex-shrink: 0;
+}
+
+.ctrl-select-wrap:focus-within { border-color: var(--brand); }
+.ctrl-select-wrap:hover { border-color: #CBD5E1; }
+
+.ctrl-select-wrap svg {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.ctrl-select {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  max-width: 116px;
+  padding-right: 4px;
+}
+
+/* Currency pills */
+.pill-group {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+  height: 32px;
+}
+
+.pill-btn {
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: inherit;
+  height: 100%;
+  transition: background var(--transition), color var(--transition);
+  outline: none;
+  letter-spacing: 0.01em;
+}
+
+.pill-btn:hover:not(.active) { background: var(--surface-2); }
+.pill-btn.active { background: var(--brand); color: #fff; }
+.pill-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+
+/* Advanced toggle */
+.adv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all var(--transition);
+  outline: none;
+}
+
+.adv-toggle svg { width: 14px; height: 14px; }
+
+.adv-toggle:hover,
+.adv-toggle.open {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: var(--brand-mid);
+}
+
+.adv-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ── Advanced panel ── */
+.adv-panel {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adv-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.adv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adv-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.adv-input {
+  padding: 6px 10px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--card);
+  width: 88px;
+  outline: none;
+  transition: border-color var(--transition);
+  cursor: text;
+}
+
+.adv-input[type=date] { width: 140px; cursor: pointer; }
+.adv-input:focus { border-color: var(--brand); }
+.adv-input:hover { border-color: #CBD5E1; }
+
+.adv-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  padding-right: 26px;
+  cursor: pointer;
+}
+
+.adv-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adv-sep {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}

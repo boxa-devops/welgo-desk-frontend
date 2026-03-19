@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/macbookpro/Desktop/welgo/**)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Read(//Users/macbookpro/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.0.1/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python3 scripts/search.py \"AI travel search assistant B2B travel agents chat interface\" --design-system -p \"Welgosk\" -f markdown)",
+      "Bash(python3 scripts/search.py \"chat interface AI assistant search results streaming\" --domain ux -n 10)",
+      "Bash(python3 scripts/search.py \"card hover animation loading skeleton\" --domain ux -n 8)"
+    ]
+  }
+}
