@@ -1,0 +1,163 @@
+.dfb-root {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.dfb-header {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.dfb-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dfb-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--brand-mid);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: dfb-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes dfb-spin { to { transform: rotate(360deg); } }
+
+.dfb-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dfb-group { display: flex; flex-direction: column; gap: 6px; }
+
+.dfb-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.dfb-label strong { color: var(--text); font-weight: 700; }
+
+/* ── Dual range slider ── */
+.dfb-slider-wrap {
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+/* Shared track */
+.dfb-slider-wrap::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Active fill */
+.dfb-track-fill {
+  position: absolute;
+  height: 4px;
+  background: var(--brand);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dfb-range {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+  z-index: 2;
+  outline: none;
+}
+
+.dfb-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  cursor: pointer;
+  pointer-events: all;
+  transition: transform 0.1s;
+}
+
+.dfb-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.dfb-range::-webkit-slider-thumb:active { transform: scale(1.0); }
+
+.dfb-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  cursor: pointer;
+  pointer-events: all;
+}
+
+/* ── Filter pills ── */
+.dfb-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dfb-pill {
+  padding: 4px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+  letter-spacing: 0.02em;
+}
+
+.dfb-pill:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-light);
+}
+
+.dfb-pill--active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+  font-weight: 600;
+}
+
+.dfb-pill--active:hover {
+  background: var(--brand-dark);
+  color: #fff;
+}

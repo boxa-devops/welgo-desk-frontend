@@ -4,11 +4,11 @@
 
 :root {
   /* Brand */
-  --brand:        #00dfaa;
-  --brand-dark:   #00c99a;
-  --brand-light:  #e6fff7;
-  --brand-mid:    #c0f5e8;
-  --brand-text:   #0a3028;
+  --brand:        #059669;   /* emerald-600 — dark enough for white text (5.5:1) */
+  --brand-dark:   #047857;   /* emerald-700 */
+  --brand-light:  #ecfdf5;   /* emerald-50 */
+  --brand-mid:    #a7f3d0;   /* emerald-200 */
+  --brand-text:   #ffffff;
   --accent:       #F97316;   /* CTA orange */
   --accent-dark:  #EA6F0D;
 
@@ -17,7 +17,7 @@
   --surface-2:    #F1F5F9;
   --card:         #FFFFFF;
   --border:       #E2E8F0;
-  --border-focus: #6fffda;
+  --border-focus: #6ee7b7;   /* emerald-300 */
 
   /* Text */
   --text:         #1E293B;

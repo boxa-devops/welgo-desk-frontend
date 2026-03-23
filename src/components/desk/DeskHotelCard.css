@@ -1,0 +1,355 @@
+/* ── Card shell ── */
+.dhcard {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition), transform var(--transition);
+  position: relative;
+}
+
+.dhcard:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+/* Tier accent border-top */
+.dhcard--value  { border-top: 3px solid var(--green); }
+.dhcard--budget { border-top: 3px solid var(--brand); }
+.dhcard--luxury { border-top: 3px solid #D97706; }
+.dhcard--beach  { border-top: 3px solid #0EA5E9; }
+.dhcard--risky  { border-top: 3px solid var(--muted); opacity: 0.85; }
+
+/* ── Photo ── */
+.dhcard-photo-wrap { position: relative; }
+
+.dhcard-photo {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.dhcard-photo-ph {
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, var(--brand-mid) 0%, var(--surface-2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dhcard-photo-ph svg {
+  width: 30px;
+  height: 30px;
+  stroke: var(--brand);
+  opacity: 0.5;
+}
+
+/* Tier badge */
+.dhcard-tier {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.dhcard-tier--value  { background: var(--green); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.dhcard-tier--budget { background: var(--brand);  color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.dhcard-tier--luxury { background: #D97706;       color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.dhcard-tier--beach  { background: #0EA5E9;       color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.dhcard-tier--risky  { background: var(--muted);  color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+
+/* Hide button */
+.dhcard-hide-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(15,23,42,.65);
+  backdrop-filter: blur(6px);
+  border: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition), background var(--transition);
+}
+
+.dhcard:hover .dhcard-hide-btn { opacity: 1; }
+
+.dhcard-hide-btn:hover {
+  background: rgba(220, 38, 38, .85);
+}
+
+/* ── Body ── */
+.dhcard-body { padding: 12px 13px 13px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+
+.dhcard-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.dhcard-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.dhcard-stars { font-size: 10px; color: var(--star); letter-spacing: 0.5px; }
+
+.dhcard-rating {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 5px;
+  line-height: 1.6;
+}
+.dhcard-rating.high { background: var(--green); }
+.dhcard-rating.mid  { background: var(--amber); }
+.dhcard-rating.low  { background: var(--muted); }
+
+.dhcard-region { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+/* Feature chips */
+.dhcard-features { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.dhcard-chip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* ── Date picker pills ── */
+.dhcard-dates {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  margin: 0 -1px;
+}
+.dhcard-dates::-webkit-scrollbar { display: none; }
+
+.dhcard-date-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.dhcard-date-pill:hover:not(.dhcard-date-pill--active) {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-mid);
+}
+.dhcard-date-pill--active {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.dhcard-date-pill-day {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.dhcard-date-pill-price {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+.dhcard-date-pill--active .dhcard-date-pill-price { opacity: 1; }
+
+/* Price */
+.dhcard-price-row { display: flex; align-items: flex-end; justify-content: space-between; }
+
+.dhcard-price {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.dhcard-price-sym {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.dhcard-price-uzs {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Details row */
+.dhcard-details {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.dhcard-detail-item {
+  font-size: 11.5px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.dhcard-detail-sep { color: var(--muted); font-size: 11px; }
+
+.dhcard-detail-charter {
+  color: var(--brand-dark);
+  background: var(--brand-mid);
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* Footer */
+.dhcard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid var(--surface-2);
+  margin-top: auto;
+}
+
+.dhcard-sea {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dhcard-sea svg { stroke: var(--muted); }
+
+.dhcard-operator-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dhcard-op-logo {
+  width: 28px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.dhcard-operator {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.dhcard-op-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  padding: 0;
+}
+.dhcard-op-link-btn:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-mid);
+}
+.dhcard-op-link-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Selected state ── */
+.dhcard--selected {
+  box-shadow: 0 0 0 2px var(--brand);
+}
+
+/* Select button */
+.dhcard-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  margin-top: 2px;
+}
+
+.dhcard-select-btn:hover:not(.dhcard-select-btn--on) {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-mid);
+}
+
+.dhcard-select-btn--on {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.dhcard-select-btn--on:hover {
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
+}

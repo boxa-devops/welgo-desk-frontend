@@ -1,0 +1,357 @@
+/* ── Root ── */
+.dap-root {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* ── Header (collapsible toggle) ── */
+.dap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--surface);
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  gap: 10px;
+  transition: background 0.15s;
+}
+
+.dap-root--open .dap-header { border-bottom-color: var(--border); }
+.dap-header:hover { background: var(--surface-2); }
+
+.dap-header-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dap-header-icon { display: flex; align-items: center; color: var(--brand); }
+
+.dap-header-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.dap-meta-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.dap-cache-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: #DCFCE7;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+  white-space: nowrap;
+}
+
+.dap-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dap-header-preview {
+  font-size: 11.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+  font-style: italic;
+}
+
+/* ── Body ── */
+.dap-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.65;
+}
+
+.dap-p { margin: 0; }
+.dap-h3 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 4px 0 0;
+}
+
+/* ── Slot grid — 2 columns ── */
+.dap-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* ── Slot card ── */
+.dap-slot-card {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  transition: box-shadow 0.15s;
+}
+
+.dap-slot-card:hover { box-shadow: var(--shadow); }
+
+/* Tier accent bars */
+.dap-slot-card--value  { border-top: 3px solid var(--green); }
+.dap-slot-card--budget { border-top: 3px solid var(--brand); }
+.dap-slot-card--luxury { border-top: 3px solid #D97706; }
+.dap-slot-card--beach  { border-top: 3px solid #0EA5E9; }
+
+.dap-slot-card-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px 3px;
+}
+
+.dap-slot-emoji { font-size: 13px; line-height: 1; }
+
+.dap-slot-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.dap-slot-card--value  .dap-slot-label { color: #166534; }
+.dap-slot-card--budget .dap-slot-label { color: var(--brand-dark); }
+.dap-slot-card--luxury .dap-slot-label { color: #B45309; }
+.dap-slot-card--beach  .dap-slot-label { color: #0369A1; }
+
+.dap-slot-hotel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 0 10px 5px;
+  line-height: 1.3;
+}
+
+.dap-slot-desc {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.55;
+  padding: 0 10px;
+  margin: 0;
+  flex: 1;
+}
+
+.dap-slot-flag {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 6px 8px 8px;
+  padding: 5px 8px;
+  background: #FFF5F5;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: #991B1B;
+  line-height: 1.45;
+}
+
+/* ── Comparison block ── */
+.dap-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dap-comparison-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.dap-comparison-label svg { flex-shrink: 0; }
+
+.dap-comparison-text {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ── Recommendation callout ── */
+.dap-rec-callout {
+  padding: 11px 14px;
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border: 1.5px solid #86EFAC;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dap-rec-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #166534;
+}
+
+.dap-rec-body {
+  margin: 0;
+  font-size: 13px;
+  color: #14532D;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+/* ── Warning (⚠️ budget exceeded) ── */
+.dap-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 9px 12px;
+  background: #FEF9C3;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: #92400E;
+  margin: 0;
+}
+
+/* ── "Что можно сделать" section ── */
+.dap-actions-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369A1;
+  margin-top: 4px;
+}
+
+.dap-actions-heading svg { stroke: #0369A1; flex-shrink: 0; }
+
+.dap-actions-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dap-actions-item {
+  font-size: 13px;
+  color: #0C4A6E;
+  line-height: 1.55;
+}
+
+/* ── Plain lists ── */
+.dap-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dap-list li { font-size: 13px; color: var(--text); line-height: 1.55; }
+
+/* ── Markdown table (fallback) ── */
+.dap-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.dap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.dap-table thead tr { background: var(--surface-2); }
+
+.dap-table th {
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.dap-table td {
+  padding: 7px 10px;
+  color: var(--text);
+  border-bottom: 1px solid var(--surface-2);
+  font-size: 12.5px;
+  vertical-align: middle;
+}
+
+.dap-table tbody tr:last-child td { border-bottom: none; }
+.dap-table tbody tr:hover { background: var(--surface); }
+.dap-th-narrow, .dap-td-narrow { width: 1%; white-space: nowrap; }
+.dap-td-slot { white-space: nowrap; padding: 5px 8px; }
+
+/* Slot chips inside table cells */
+.dap-slot-chip {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.dap-slot-chip--value  { background: #DCFCE7; color: #166534; }
+.dap-slot-chip--budget { background: #EFF6FF; color: #1D4ED8; }
+.dap-slot-chip--luxury { background: #FEF3C7; color: #B45309; }
+.dap-slot-chip--beach  { background: #E0F2FE; color: #0369A1; }
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  .dap-slot-grid { grid-template-columns: 1fr; }
+  .dap-header-preview { max-width: 140px; }
+}

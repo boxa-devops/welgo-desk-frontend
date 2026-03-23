@@ -11,6 +11,16 @@ export function fmt(n) {
   return Math.round(n).toLocaleString('ru-RU');
 }
 
+/** Compact UZS: 15 820 261 → "15,8 млн", 850 000 → "850 тыс" */
+export function fmtUzs(n) {
+  if (n == null) return '—';
+  if (n >= 1_000_000) {
+    const m = Math.round(n / 100_000) / 10;
+    return m.toLocaleString('ru-RU') + ' млн';
+  }
+  return Math.round(n / 1000).toLocaleString('ru-RU') + ' тыс';
+}
+
 export function stars(n) {
   return '★'.repeat(Math.max(0, n)) + '☆'.repeat(Math.max(0, 5 - n));
 }
