@@ -1,2 +1,2 @@
-/api/*  https://centerbeam.proxy.rlwy.net:43693/api/:splat  200
+/api/*  http://centerbeam.proxy.rlwy.net:43693/api/:splat  200
 /*      /index.html   200
