@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.WELGO_DESK_BACKEND_URL || 'http://localhost:8000',
           changeOrigin: true,
+          secure: false,
         },
       },
     },
