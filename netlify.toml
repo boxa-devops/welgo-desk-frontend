@@ -1,0 +1,58 @@
+# Netlify configuration for Welgo Desk frontend.
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# ── Security headers applied to every response ───────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+
+    # ── Clickjacking prevention ──────────────────────────────────────────────
+    # frame-ancestors in CSP supersedes X-Frame-Options on modern browsers;
+    # both are set for maximum compatibility.
+    X-Frame-Options = "DENY"
+
+    # ── MIME-type sniffing prevention ────────────────────────────────────────
+    X-Content-Type-Options = "nosniff"
+
+    # ── Referrer leakage control ─────────────────────────────────────────────
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # ── Disable unused browser features ─────────────────────────────────────
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+    # ── Content Security Policy ──────────────────────────────────────────────
+    # default-src 'self'          → baseline: only load from same origin
+    # script-src  'self'          → Vite bundles all JS into hashed files; no
+    #                               inline scripts, no external JS needed
+    # style-src   'self'          → Vite extracts CSS to hashed files
+    #             'unsafe-inline' → needed: Preact/Vite may inject inline styles
+    #                               at runtime (e.g. dynamic CSS modules)
+    #             fonts.googleapis.com → Google Fonts CSS stylesheet
+    # font-src    'self'
+    #             fonts.gstatic.com   → Google Fonts binary font files
+    # connect-src 'self'              → /api/* calls (proxied by Netlify)
+    #             *.supabase.co       → Supabase Auth REST + Realtime WebSocket
+    #             wss://*.supabase.co → Supabase Realtime WebSocket
+    # img-src     'self' data: https: → hotel images (TourVisor CDN, unknown domains)
+    # frame-ancestors 'none'          → disallow embedding in any frame/iframe
+    # base-uri    'self'              → prevent base tag injection attacks
+    # form-action 'self'              → prevent form hijacking
+    # upgrade-insecure-requests       → auto-upgrade http: sub-resources to https:
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+
+# ── Cache-Control: sensitive HTML entry point should not be cached ────────────
+# The SPA shell (index.html) must revalidate so users always get the latest
+# deploy. Hashed JS/CSS assets can be cached aggressively.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    # Vite outputs content-hashed filenames — safe for long-term caching.
+    Cache-Control = "public, max-age=31536000, immutable"
