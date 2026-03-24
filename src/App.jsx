@@ -9,6 +9,25 @@ import ProfilePage from './components/ProfilePage.jsx';
 import SuperAdminPage from './components/SuperAdminPage.jsx';
 import './App.css';
 
+function PendingApprovalPage({ profile, signOut }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '12px', color: 'var(--text)', textAlign: 'center', padding: '24px' }}>
+      <div style={{ fontSize: '40px' }}>⏳</div>
+      <h2 style={{ margin: 0, fontWeight: 800, fontSize: '20px' }}>Ожидание активации</h2>
+      <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px', maxWidth: '360px' }}>
+        Агентство <strong>{profile.org_name}</strong> зарегистрировано и ожидает подтверждения от администратора Welgo.
+        Мы свяжемся с вами в ближайшее время.
+      </p>
+      <button
+        onClick={signOut}
+        style={{ marginTop: '8px', padding: '8px 20px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: '13px' }}
+      >
+        Выйти
+      </button>
+    </div>
+  );
+}
+
 function AppShell() {
   const { session, profile, profileLoading, signOut } = useAuth();
   const [conversations, setConversations] = useState([]);
@@ -88,6 +107,7 @@ function AppShell() {
     return <div class="app-loading"><span class="app-loading-dot" /></div>;
   }
   if (!profile) return <OnboardingPage />;
+  if (profile.is_enabled === false) return <PendingApprovalPage profile={profile} signOut={signOut} />;
 
   // ── Main app ──────────────────────────────────────────────────────────────
   return (
