@@ -6,12 +6,16 @@ import OnboardingPage from './components/auth/OnboardingPage.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import DeskView from './components/desk/DeskView.jsx';
 import ProfilePage from './components/ProfilePage.jsx';
+import SuperAdminPage from './components/SuperAdminPage.jsx';
 import './App.css';
 
 function AppShell() {
   const { session, profile, profileLoading, signOut } = useAuth();
   const [conversations, setConversations] = useState([]);
-  const [activeView, setActiveView] = useState(() => sessionStorage.getItem('activeView') ?? 'desk');
+  const [activeView, setActiveView] = useState(() => {
+    if (window.location.hash === '#superadmin') return 'superadmin';
+    return sessionStorage.getItem('activeView') ?? 'desk';
+  });
 
   const handleViewChange = useCallback((view) => {
     sessionStorage.setItem('activeView', view);
@@ -100,6 +104,7 @@ function AppShell() {
         onViewChange={handleViewChange}
       />
       <div class="main-content">
+        {activeView === 'superadmin' && <SuperAdminPage />}
         {activeView === 'profile' && <ProfilePage />}
         {mountedSessions.ids.map(id => (
           <div

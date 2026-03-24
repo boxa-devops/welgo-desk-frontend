@@ -1,0 +1,223 @@
+.sa-root {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--surface);
+  display: flex;
+  justify-content: center;
+  padding: 48px 24px 80px;
+}
+
+.sa-container {
+  width: 100%;
+  max-width: 620px;
+}
+
+.sa-header {
+  margin-bottom: 28px;
+}
+
+.sa-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.4px;
+  margin: 0 0 4px;
+}
+
+.sa-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.sa-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Add form ── */
+
+.sa-add-form {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.sa-form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sa-input {
+  flex: 1;
+  min-width: 180px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.sa-input:focus {
+  border-color: var(--brand);
+}
+
+.sa-input--note {
+  min-width: 140px;
+  flex: 0.6;
+}
+
+.sa-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #ef4444;
+}
+
+/* ── List ── */
+
+.sa-list {
+  overflow: hidden;
+}
+
+.sa-loading,
+.sa-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sa-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sa-entry:last-child {
+  border-bottom: none;
+}
+
+.sa-entry-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sa-entry-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: monospace;
+}
+
+.sa-entry-note {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-entry-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sa-entry-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Badges ── */
+
+.sa-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.sa-badge--registered {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.sa-badge--pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+/* ── Buttons ── */
+
+.sa-btn {
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sa-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-btn--add {
+  background: var(--brand);
+  color: var(--brand-text);
+  white-space: nowrap;
+}
+
+.sa-btn--add:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.sa-btn--delete {
+  height: 28px;
+  width: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-btn--delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+/* ── Forbidden ── */
+
+.sa-forbidden {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 120px;
+  color: var(--muted);
+}
+
+.sa-forbidden-icon {
+  font-size: 40px;
+}
