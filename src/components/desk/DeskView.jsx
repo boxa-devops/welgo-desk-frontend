@@ -128,6 +128,65 @@ function ThinkingBubble({ statusText, progress, hotelsFound, hotelNames }) {
   );
 }
 
+// ── Gather client info form (shown while search runs) ──
+function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
+  const [values, setValues] = useState({});
+
+  const set = (key, val) => setValues(prev => ({ ...prev, [key]: val }));
+
+  const handleSubmit = () => {
+    const result = {};
+    (data.fields || []).forEach(f => {
+      if (values[f.key]?.trim()) result[f.key] = values[f.key].trim();
+    });
+    onSubmit(result);
+  };
+
+  return (
+    <div class="desk-ai-plain">
+      <div class="desk-avatar">D</div>
+      <div class="desk-gather-client">
+        <div class="desk-gather-header">
+          <span class="desk-gather-title">{data.title || 'Данные клиента'}</span>
+          <span class="desk-gather-desc">{data.description || 'Заполните пока идёт поиск'}</span>
+        </div>
+
+        {/* Mini progress bar while search runs */}
+        <div class="desk-gather-progress">
+          <div class="desk-gather-progress-fill" style={{ width: progress > 0 ? `${progress}%` : '5%', transition: 'width 0.4s ease' }} />
+        </div>
+
+        <div class="desk-gather-fields">
+          {(data.fields || []).map(field => (
+            <div class="desk-gather-field" key={field.key}>
+              <label class="desk-gather-label">{field.label}</label>
+              <input
+                class="desk-gather-input"
+                type={field.key === 'phone' ? 'tel' : 'text'}
+                placeholder={field.placeholder || ''}
+                value={values[field.key] || ''}
+                onInput={e => set(field.key, e.target.value)}
+                autocomplete="off"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div class="desk-gather-actions">
+          <button class="desk-gather-submit" onClick={handleSubmit}>
+            Сохранить →
+          </button>
+          {data.skippable && (
+            <button class="desk-gather-skip" onClick={onSkip}>
+              {data.skip_label || 'Пропустить'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Streaming analysis bubble ──
 // Renders plain text during streaming to avoid table/markdown glitches.
 // Full markdown render happens after the result event (StructuredResult).
@@ -358,6 +417,8 @@ export default function DeskView({ sessionId, onTurnComplete }) {
   const [text, setText] = useState('');
   const [allHotelsOpen, setAllHotelsOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
+  // Client info gathered via the gather_client form — persisted for the session
+  const [clientInfo, setClientInfo] = useState(null);
 
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
@@ -452,6 +513,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           history,
           blacklist,
           context_actions: contextActions,
+          ...(clientInfo ? { client_info: clientInfo } : {}),
         }),
       });
 
@@ -507,6 +569,9 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           if (chunk.type === 'result') {
             updateMessage(aiId, { state: 'done', structured: chunk.structured });
           }
+          if (chunk.type === 'gather_client') {
+            updateMessage(aiId, { gatherClient: chunk });
+          }
           if (chunk.type === 'clarify') {
             updateMessage(aiId, { state: 'clarify', clarify: chunk });
           }
@@ -521,7 +586,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
       setIsThinking(false);
       onTurnComplete?.();
     }
-  }, [isThinking, sessionId, blacklist, updateMessage, onTurnComplete]);
+  }, [isThinking, sessionId, blacklist, clientInfo, updateMessage, onTurnComplete]);
 
   // ── Hotel hide ──
   const handleHide = useCallback((hotelName) => {
@@ -691,7 +756,20 @@ export default function DeskView({ sessionId, onTurnComplete }) {
             ];
           }
 
-          if (m.state === 'thinking') return <ThinkingBubble key={m.id} statusText={m.statusText} progress={m.progress} hotelsFound={m.hotelsFound} hotelNames={m.hotelNames} />;
+          if (m.state === 'thinking') {
+            if (m.gatherClient) {
+              return (
+                <GatherClientBubble
+                  key={m.id}
+                  data={m.gatherClient}
+                  progress={m.progress}
+                  onSubmit={info => { setClientInfo(info); updateMessage(m.id, { gatherClient: null }); }}
+                  onSkip={() => updateMessage(m.id, { gatherClient: null })}
+                />
+              );
+            }
+            return <ThinkingBubble key={m.id} statusText={m.statusText} progress={m.progress} hotelsFound={m.hotelsFound} hotelNames={m.hotelNames} />;
+          }
           if (m.state === 'analyzing') return <StreamingAnalysis key={m.id} text={m.streamingAnalysis} />;
           if (m.state === 'clarify') return <ClarifyBubble key={m.id} message={m} onSearch={handleSend} />;
           if (m.state === 'error') {
