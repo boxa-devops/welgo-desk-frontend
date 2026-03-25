@@ -123,6 +123,16 @@
   line-height: 1.4;
 }
 
+.sidebar-client-tag {
+  font-size: 11px;
+  color: var(--brand, #3B82F6);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 .sidebar-item-date {
   font-size: 10.5px;
   color: #6b7280;

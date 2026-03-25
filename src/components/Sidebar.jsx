@@ -160,6 +160,11 @@ export default function Sidebar({ conversations, activeId, onNewChat, onSelect, 
                 ) : (
                   <div class="sidebar-item-title">{c.title}</div>
                 )}
+                {(c.client_info?.name || c.client_info?.phone) && (
+                  <div class="sidebar-client-tag">
+                    {[c.client_info.name, c.client_info.phone].filter(Boolean).join(' · ')}
+                  </div>
+                )}
                 <div class="sidebar-item-date">{formatDate(c.updated_at)}</div>
               </div>
 

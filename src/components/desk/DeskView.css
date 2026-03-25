@@ -788,6 +788,23 @@
   font-weight: 600;
   color: var(--muted);
   margin-bottom: 4px;
+}
+
+/* ── Client info bar (shows saved client within session) ── */
+.desk-client-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--brand-light, rgba(59,130,246,.06));
+}
+
+.desk-client-bar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -849,9 +866,122 @@
   border-color: var(--text-2);
 }
 
+.desk-client-bar-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.desk-client-bar-phone {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.desk-client-bar-notes {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+/* ── Gather-client sticky form ── */
+.desk-gather-client {
+  margin: 0 20px 0;
+  padding: 12px 14px 10px;
+  background: var(--card);
+  border: 1.5px solid var(--brand);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.desk-gather-client-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.desk-gather-client-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.desk-gather-client-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.desk-gather-client-fields {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.desk-gather-client-input {
+  flex: 1;
+  min-width: 120px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.desk-gather-client-input:focus {
+  border-color: var(--brand);
+}
+
+.desk-gather-client-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desk-gather-client-save {
+  height: 32px;
+  padding: 0 16px;
+  background: var(--brand);
+  color: var(--brand-text);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.desk-gather-client-save:hover:not(:disabled) { background: var(--brand-dark); }
+.desk-gather-client-save:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.desk-gather-client-skip {
+  height: 32px;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.desk-gather-client-skip:hover { color: var(--text-2); }
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .desk-hotel-grid { grid-template-columns: 1fr; }
   .desk-user-bubble { max-width: 88%; }
   .desk-plain-bubble { max-width: 90%; }
+  .desk-gather-client-fields { flex-direction: column; }
 }

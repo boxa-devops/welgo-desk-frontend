@@ -82,6 +82,64 @@ function ClarifyBubble({ message, onSearch }) {
   );
 }
 
+// ── Client detail form (sticky panel, persists until filled or skipped) ──
+function GatherClientBubble({ form, sessionId, onDone }) {
+  const [values, setValues] = useState({ name: '', phone: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+
+  const hasAny = Object.values(values).some(v => v.trim());
+
+  const handleSubmit = async () => {
+    if (!hasAny || saving) return;
+    setSaving(true);
+    try {
+      await apiFetch('/api/desk/client_info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, ...values }),
+      });
+    } finally {
+      setSaving(false);
+      onDone(values);
+    }
+  };
+
+  return (
+    <div class="desk-gather-client">
+      <div class="desk-gather-client-header">
+        <span class="desk-gather-client-title">{form.title}</span>
+        <span class="desk-gather-client-desc">{form.description}</span>
+      </div>
+      <div class="desk-gather-client-fields">
+        {form.fields.map(f => (
+          <input
+            key={f.key}
+            class="desk-gather-client-input"
+            type={f.key === 'phone' ? 'tel' : 'text'}
+            placeholder={f.placeholder}
+            value={values[f.key]}
+            onInput={e => setValues(prev => ({ ...prev, [f.key]: e.target.value }))}
+          />
+        ))}
+      </div>
+      <div class="desk-gather-client-actions">
+        <button
+          class="desk-gather-client-save"
+          onClick={handleSubmit}
+          disabled={!hasAny || saving}
+        >
+          {saving ? 'Сохраняю…' : 'Сохранить'}
+        </button>
+        {form.skippable && (
+          <button class="desk-gather-client-skip" onClick={() => onDone(null)}>
+            {form.skip_label}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Plain-text AI bubble ──
 function PlainBubble({ text }) {
   return (
@@ -419,6 +477,8 @@ export default function DeskView({ sessionId, onTurnComplete }) {
   const [builderOpen, setBuilderOpen] = useState(false);
   // Client info gathered via the gather_client form — persisted for the session
   const [clientInfo, setClientInfo] = useState(null);
+  const [pendingClientForm, setPendingClientForm] = useState(null);
+  const [sessionClient, setSessionClient] = useState(null);
 
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
@@ -431,6 +491,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
     apiFetch(`/api/desk/conversations/${sessionId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
+        if (data?.client_info) setSessionClient(data.client_info);
         if (!data?.messages?.length) return;
         setMessages(data.messages.map(m => {
           if (m.role === 'user') {
@@ -577,6 +638,9 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           }
           if (chunk.type === 'plain') {
             updateMessage(aiId, { state: 'done', plain_text: chunk.text });
+          }
+          if (chunk.type === 'gather_client') {
+            setPendingClientForm(chunk);
           }
         }
       }
@@ -796,6 +860,26 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           return null;
         })}
       </div>
+
+      {sessionClient && (sessionClient.name || sessionClient.phone) && (
+        <div class="desk-client-bar">
+          <span class="desk-client-bar-label">Клиент:</span>
+          {sessionClient.name && <span class="desk-client-bar-name">{sessionClient.name}</span>}
+          {sessionClient.phone && <span class="desk-client-bar-phone">{sessionClient.phone}</span>}
+          {sessionClient.notes && <span class="desk-client-bar-notes">{sessionClient.notes}</span>}
+        </div>
+      )}
+
+      {pendingClientForm && (
+        <GatherClientBubble
+          form={pendingClientForm}
+          sessionId={sessionId}
+          onDone={(submitted) => {
+            setPendingClientForm(null);
+            if (submitted) setSessionClient(submitted);
+          }}
+        />
+      )}
 
       {builderOpen && (
         <TourPromptBuilder
