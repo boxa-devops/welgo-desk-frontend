@@ -5,6 +5,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [preact()],
+    resolve: {
+      dedupe: ['preact', 'preact/hooks', 'preact/compat'],
+    },
     build: {
       outDir: 'dist',
       emptyOutDir: true,

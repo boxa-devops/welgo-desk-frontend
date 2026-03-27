@@ -13,5 +13,5 @@ render(
   <PostHogCtx.Provider value={posthog}>
     <App />
   </PostHogCtx.Provider>,
-  document.getElementById('root')
+  document.getElementById('app')
 );
