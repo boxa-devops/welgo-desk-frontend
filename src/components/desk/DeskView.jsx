@@ -796,9 +796,6 @@ export default function DeskView({ sessionId, onTurnComplete }) {
                 structured: chunk.structured,
               });
             }
-            if (chunk.type === "gather_client") {
-              updateMessage(aiId, { gatherClient: chunk });
-            }
             if (chunk.type === "clarify") {
               updateMessage(aiId, { state: "clarify", clarify: chunk });
             }
