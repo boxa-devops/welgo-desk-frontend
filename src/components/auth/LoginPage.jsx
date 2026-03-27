@@ -1,33 +1,40 @@
-import { useState } from 'preact/hooks';
-import { supabase } from '../../lib/supabase.js';
-import './LoginPage.css';
+import { useState } from "preact/hooks";
+import { supabase } from "../../lib/supabase.js";
+import { usePostHog } from "../../lib/posthog.jsx";
+import "./LoginPage.css";
 
 export default function LoginPage() {
-  const [tab, setTab] = useState('login'); // 'login' | 'register'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const posthog = usePostHog();
+  const [tab, setTab] = useState("login"); // 'login' | 'register'
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setInfo('');
+    setError("");
+    setInfo("");
     setLoading(true);
 
     try {
-      if (tab === 'login') {
-        const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (tab === "login") {
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (err) throw err;
+        posthog.capture("user_logged_in");
         // AuthContext will react to onAuthStateChange automatically
       } else {
         const { error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
-        setInfo('Письмо с подтверждением отправлено. Проверьте почту.');
+        posthog.capture("user_registered");
+        setInfo("Письмо с подтверждением отправлено. Проверьте почту.");
       }
     } catch (err) {
-      setError(err.message ?? 'Что-то пошло не так');
+      setError(err.message ?? "Что-то пошло не так");
     } finally {
       setLoading(false);
     }
@@ -44,14 +51,22 @@ export default function LoginPage() {
 
         <div class="login-tabs">
           <button
-            class={`login-tab${tab === 'login' ? ' active' : ''}`}
-            onClick={() => { setTab('login'); setError(''); setInfo(''); }}
+            class={`login-tab${tab === "login" ? " active" : ""}`}
+            onClick={() => {
+              setTab("login");
+              setError("");
+              setInfo("");
+            }}
           >
             Войти
           </button>
           <button
-            class={`login-tab${tab === 'register' ? ' active' : ''}`}
-            onClick={() => { setTab('register'); setError(''); setInfo(''); }}
+            class={`login-tab${tab === "register" ? " active" : ""}`}
+            onClick={() => {
+              setTab("register");
+              setError("");
+              setInfo("");
+            }}
           >
             Регистрация
           </button>
@@ -64,7 +79,7 @@ export default function LoginPage() {
               type="email"
               placeholder="you@agency.com"
               value={email}
-              onInput={e => setEmail(e.target.value)}
+              onInput={(e) => setEmail(e.target.value)}
               required
               autocomplete="email"
             />
@@ -73,11 +88,15 @@ export default function LoginPage() {
             <label>Пароль</label>
             <input
               type="password"
-              placeholder={tab === 'register' ? 'Минимум 6 символов' : '••••••••'}
+              placeholder={
+                tab === "register" ? "Минимум 6 символов" : "••••••••"
+              }
               value={password}
-              onInput={e => setPassword(e.target.value)}
+              onInput={(e) => setPassword(e.target.value)}
               required
-              autocomplete={tab === 'login' ? 'current-password' : 'new-password'}
+              autocomplete={
+                tab === "login" ? "current-password" : "new-password"
+              }
             />
           </div>
 
@@ -86,8 +105,10 @@ export default function LoginPage() {
 
           <button class="login-submit" type="submit" disabled={loading}>
             {loading
-              ? 'Загрузка...'
-              : tab === 'login' ? 'Войти' : 'Создать аккаунт'}
+              ? "Загрузка..."
+              : tab === "login"
+              ? "Войти"
+              : "Создать аккаунт"}
           </button>
         </form>
       </div>

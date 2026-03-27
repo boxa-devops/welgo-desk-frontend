@@ -1,18 +1,24 @@
-import { useState, useEffect } from 'preact/hooks';
-import { useAuth } from '../lib/AuthContext.jsx';
-import { apiFetch } from '../lib/api.js';
-import './ProfilePage.css';
+import { useState, useEffect } from "preact/hooks";
+import { useAuth } from "../lib/AuthContext.jsx";
+import { apiFetch } from "../lib/api.js";
+import "./ProfilePage.css";
+import { usePostHog } from "../lib/posthog.jsx";
 
 function getInitials(name) {
-  if (!name) return '?';
-  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 function RoleLabel({ role }) {
   const map = {
-    admin: 'Администратор',
-    manager: 'Менеджер',
-    agent: 'Агент',
+    admin: "Администратор",
+    manager: "Менеджер",
+    agent: "Агент",
   };
   return (
     <span class={`pp-role-badge pp-role-badge--${role}`}>
@@ -24,20 +30,23 @@ function RoleLabel({ role }) {
 // ── Plan card ──────────────────────────────────────────────────────────────
 
 const PLAN_META = {
-  solo:       { label: 'SOLO',       price: 39,  accent: '#6b7280' },
-  team:       { label: 'TEAM',       price: 99,  accent: '#059669' },
-  enterprise: { label: 'ENTERPRISE', price: 249, accent: '#7c3aed' },
+  solo: { label: "SOLO", price: 39, accent: "#6b7280" },
+  team: { label: "TEAM", price: 99, accent: "#059669" },
+  enterprise: { label: "ENTERPRISE", price: 249, accent: "#7c3aed" },
 };
 
 function PlanCard({ profile }) {
-  const plan     = profile?.plan ?? 'solo';
-  const meta     = PLAN_META[plan] ?? PLAN_META.solo;
-  const used     = profile?.credits_used   ?? 0;
-  const limit    = profile?.credits_limit  ?? 300;
-  const seatsU   = profile?.seats_used     ?? 1;
-  const seatsL   = profile?.seats_limit    ?? 1;
-  const resetAt  = profile?.credits_reset_at ? new Date(profile.credits_reset_at) : null;
-  const pctUsed  = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const plan = profile?.plan ?? "solo";
+  const meta = PLAN_META[plan] ?? PLAN_META.solo;
+  const used = profile?.credits_used ?? 0;
+  const limit = profile?.credits_limit ?? 300;
+  const seatsU = profile?.seats_used ?? 1;
+  const seatsL = profile?.seats_limit ?? 1;
+  const resetAt = profile?.credits_reset_at
+    ? new Date(profile.credits_reset_at)
+    : null;
+  const pctUsed =
+    limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
 
   return (
     <div class="pp-plan-card pp-card">
@@ -46,17 +55,22 @@ function PlanCard({ profile }) {
           {meta.label}
         </span>
         <span class="pp-plan-price">
-          ${meta.price}<span class="pp-plan-per">/мес</span>
+          ${meta.price}
+          <span class="pp-plan-per">/мес</span>
         </span>
       </div>
 
       <div class="pp-plan-stats">
         <div class="pp-plan-stat">
-          <div class="pp-plan-stat-val">{used.toLocaleString('ru')} / {limit.toLocaleString('ru')}</div>
+          <div class="pp-plan-stat-val">
+            {used.toLocaleString("ru")} / {limit.toLocaleString("ru")}
+          </div>
           <div class="pp-plan-stat-label">Поисков использовано</div>
           <div class="pp-plan-bar">
             <div
-              class={`pp-plan-bar-fill${pctUsed >= 90 ? ' pp-plan-bar-fill--warn' : ''}`}
+              class={`pp-plan-bar-fill${
+                pctUsed >= 90 ? " pp-plan-bar-fill--warn" : ""
+              }`}
               style={{ width: `${pctUsed}%` }}
             />
           </div>
@@ -65,7 +79,9 @@ function PlanCard({ profile }) {
         <div class="pp-plan-stat-divider" />
 
         <div class="pp-plan-stat">
-          <div class="pp-plan-stat-val">{seatsU} / {seatsL}</div>
+          <div class="pp-plan-stat-val">
+            {seatsU} / {seatsL}
+          </div>
           <div class="pp-plan-stat-label">Мест в команде</div>
         </div>
 
@@ -74,7 +90,10 @@ function PlanCard({ profile }) {
             <div class="pp-plan-stat-divider" />
             <div class="pp-plan-stat">
               <div class="pp-plan-stat-val">
-                {resetAt.toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                {resetAt.toLocaleDateString("ru", {
+                  day: "numeric",
+                  month: "short",
+                })}
               </div>
               <div class="pp-plan-stat-label">Сброс лимита</div>
             </div>
@@ -88,6 +107,7 @@ function PlanCard({ profile }) {
 // ── Invite section ─────────────────────────────────────────────────────────
 
 function InviteSection() {
+  const posthog = usePostHog();
   const [code, setCode] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -97,14 +117,15 @@ function InviteSection() {
     setLoading(true);
     setError(null);
     try {
-      const r = await apiFetch('/api/admin/invite', { method: 'POST' });
+      const r = await apiFetch("/api/admin/invite", { method: "POST" });
       if (r.ok) {
         const data = await r.json();
+        posthog.capture("invite_code_generated");
         setCode(data.invite_code);
         setCopied(false);
       } else {
         const data = await r.json().catch(() => ({}));
-        setError(data.detail ?? 'Ошибка генерации');
+        setError(data.detail ?? "Ошибка генерации");
       }
     } finally {
       setLoading(false);
@@ -113,6 +134,7 @@ function InviteSection() {
 
   const copy = () => {
     if (!code) return;
+    posthog.capture("invite_code_copied");
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -123,10 +145,11 @@ function InviteSection() {
     <div class="pp-card pp-invite-card">
       <div class="pp-invite-top">
         <div class="pp-invite-desc">
-          Сгенерируйте одноразовый код для приглашения нового агента в организацию.
+          Сгенерируйте одноразовый код для приглашения нового агента в
+          организацию.
         </div>
         <button class="pp-invite-btn" onClick={generate} disabled={loading}>
-          {loading ? 'Генерация…' : 'Создать приглашение'}
+          {loading ? "Генерация…" : "Создать приглашение"}
         </button>
       </div>
       {error && <div class="pp-invite-error">{error}</div>}
@@ -135,13 +158,31 @@ function InviteSection() {
           <span class="pp-invite-code">{code}</span>
           <button class="pp-invite-copy" onClick={copy} title="Скопировать">
             {copied ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
-                <polyline points="20 6 9 17 4 12"/>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="15"
+                height="15"
+              >
+                <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
-                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="15"
+                height="15"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
               </svg>
             )}
           </button>
@@ -157,8 +198,8 @@ function TeamSection() {
   const [team, setTeam] = useState(null);
 
   useEffect(() => {
-    apiFetch('/api/admin/team')
-      .then(r => r.ok ? r.json() : [])
+    apiFetch("/api/admin/team")
+      .then((r) => (r.ok ? r.json() : []))
       .then(setTeam)
       .catch(() => setTeam([]));
   }, []);
@@ -177,9 +218,11 @@ function TeamSection() {
               <div class="pp-team-name">{agent.full_name}</div>
               <div class="pp-team-meta">
                 <span class={`pp-role-badge pp-role-badge--${agent.role}`}>
-                  {agent.role === 'admin' ? 'Администратор' : 'Агент'}
+                  {agent.role === "admin" ? "Администратор" : "Агент"}
                 </span>
-                <span class="pp-team-searches">{agent.total_searches} поисков</span>
+                <span class="pp-team-searches">
+                  {agent.total_searches} поисков
+                </span>
               </div>
             </div>
           </div>
@@ -202,15 +245,29 @@ function CreditsRing({ used, limit }) {
   const circumference = 2 * Math.PI * R;
   const pct = limit > 0 ? Math.min(1, remaining / limit) : 0;
   const offset = circumference * (1 - pct);
-  const color = pct < 0.15 ? '#ef4444' : pct < 0.3 ? '#f59e0b' : 'var(--brand)';
+  const color = pct < 0.15 ? "#ef4444" : pct < 0.3 ? "#f59e0b" : "var(--brand)";
 
   return (
     <div class="pp-credits-ring-card">
       <div class="pp-credits-ring-wrap">
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
-          <circle cx={C} cy={C} r={R} fill="none" stroke="var(--brand-light)" stroke-width="10" />
+        <svg
+          width={SIZE}
+          height={SIZE}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          aria-hidden="true"
+        >
           <circle
-            cx={C} cy={C} r={R}
+            cx={C}
+            cy={C}
+            r={R}
+            fill="none"
+            stroke="var(--brand-light)"
+            stroke-width="10"
+          />
+          <circle
+            cx={C}
+            cy={C}
+            r={R}
             fill="none"
             stroke={color}
             stroke-width="10"
@@ -222,16 +279,16 @@ function CreditsRing({ used, limit }) {
           />
         </svg>
         <div class="pp-ring-center">
-          <span class="pp-ring-value">{remaining.toLocaleString('ru')}</span>
+          <span class="pp-ring-value">{remaining.toLocaleString("ru")}</span>
           <span class="pp-ring-unit">поисков</span>
         </div>
       </div>
       <div class="pp-credits-ring-info">
         <div class="pp-credits-ring-title">Остаток поисков</div>
         <div class="pp-credits-ring-sub">
-          <span class="pp-credits-ring-pct">{used.toLocaleString('ru')}</span>
-          {' из '}
-          {limit.toLocaleString('ru')} использовано
+          <span class="pp-credits-ring-pct">{used.toLocaleString("ru")}</span>
+          {" из "}
+          {limit.toLocaleString("ru")} использовано
         </div>
         <div class="pp-credits-ring-hint">
           Расходуются при каждом поиске. Сбрасываются ежемесячно.
@@ -244,16 +301,16 @@ function CreditsRing({ used, limit }) {
 // ── ProfilePage ────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const posthog = usePostHog();
   const { profile, session, signOut } = useAuth();
 
-  const email = session?.user?.email ?? '—';
-  const name  = profile?.full_name ?? '—';
-  const role  = profile?.role ?? '';
+  const email = session?.user?.email ?? "—";
+  const name = profile?.full_name ?? "—";
+  const role = profile?.role ?? "";
 
   return (
     <div class="pp-root">
       <div class="pp-container">
-
         <div class="pp-page-header">
           <h1 class="pp-page-title">Профиль</h1>
           <p class="pp-page-sub">Информация об аккаунте и использовании</p>
@@ -261,7 +318,9 @@ export default function ProfilePage() {
 
         {/* User card */}
         <div class="pp-card pp-user-card">
-          <div class="pp-avatar" aria-hidden="true">{getInitials(name)}</div>
+          <div class="pp-avatar" aria-hidden="true">
+            {getInitials(name)}
+          </div>
           <div class="pp-user-info">
             <div class="pp-user-name">{name}</div>
             <div class="pp-user-email">{email}</div>
@@ -292,17 +351,21 @@ export default function ProfilePage() {
           <div class="pp-info-divider" />
           <div class="pp-info-row">
             <span class="pp-info-key">ID профиля</span>
-            <span class="pp-info-val pp-info-val--mono">{profile?.profile_id ?? '—'}</span>
+            <span class="pp-info-val pp-info-val--mono">
+              {profile?.profile_id ?? "—"}
+            </span>
           </div>
           <div class="pp-info-divider" />
           <div class="pp-info-row">
             <span class="pp-info-key">Организация</span>
-            <span class="pp-info-val pp-info-val--mono">{profile?.org_id ?? '—'}</span>
+            <span class="pp-info-val pp-info-val--mono">
+              {profile?.org_id ?? "—"}
+            </span>
           </div>
         </div>
 
         {/* Team + Invite (admin only) */}
-        {role === 'admin' && (
+        {role === "admin" && (
           <>
             <div class="pp-section-label">Приглашение</div>
             <InviteSection />
@@ -311,15 +374,27 @@ export default function ProfilePage() {
           </>
         )}
 
-        <button class="pp-signout-btn" onClick={signOut}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
+        <button
+          class="pp-signout-btn"
+          onClick={() => {
+            posthog.capture("user_signed_out");
+            signOut();
+          }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Выйти из аккаунта
         </button>
-
       </div>
     </div>
   );
