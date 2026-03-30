@@ -1012,10 +1012,143 @@
 
 .desk-gather-client-skip:hover { color: var(--text-2); }
 
+/* ── Thought bubble (agent reasoning panel) ── */
+.desk-thought-bubble {
+  margin: 0 0 8px 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent));
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.desk-thought-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+}
+
+.desk-thought-header:hover {
+  background: color-mix(in srgb, var(--surface) 85%, var(--accent));
+}
+
+.desk-thought-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.desk-thought-summary {
+  flex: 1;
+  color: var(--muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desk-thought-confidence {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.desk-thought-confidence--high {
+  color: #22c55e;
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+}
+
+.desk-thought-confidence--mid {
+  color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+}
+
+.desk-thought-confidence--low {
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.desk-thought-chevron {
+  color: var(--muted);
+  font-size: 11px;
+  transition: transform 0.2s;
+}
+
+.desk-thought-chevron.open {
+  transform: rotate(180deg);
+}
+
+.desk-thought-details {
+  padding: 4px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.desk-thought-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.desk-thought-label {
+  color: var(--muted);
+  font-size: 11px;
+  min-width: 72px;
+  flex-shrink: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.desk-thought-value {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.desk-thought-hints {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.desk-thought-plan {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.desk-thought-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+}
+
+.desk-thought-arrow {
+  color: var(--muted);
+  font-size: 10px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .desk-hotel-grid { grid-template-columns: 1fr; }
   .desk-user-bubble { max-width: 88%; }
   .desk-plain-bubble { max-width: 90%; }
   .desk-gather-client-fields { flex-direction: column; }
+  .desk-thought-bubble { margin-left: 0; }
 }

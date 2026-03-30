@@ -40,11 +40,102 @@ const EMPTY_FILTER = {
   mealPlan: null,
 };
 
+// ── Travel profile display labels ──
+const PROFILE_LABELS = {
+  family_beach: { label: "Семейный пляж", emoji: "👨‍👩‍👧" },
+  couple_romantic: { label: "Романтика", emoji: "💑" },
+  solo_adventure: { label: "Соло", emoji: "🧳" },
+  business_quick: { label: "Деловая", emoji: "💼" },
+  luxury_relaxation: { label: "Люкс", emoji: "✨" },
+  budget_getaway: { label: "Бюджет", emoji: "💰" },
+};
+
+// ── Thought bubble — displays agent reasoning process ──
+function ThoughtBubble({ thought }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!thought) return null;
+
+  const profile = PROFILE_LABELS[thought.travel_profile] ?? {
+    label: thought.travel_profile,
+    emoji: "🤔",
+  };
+  const confidencePct = Math.round(thought.confidence * 100);
+  const confidenceCls =
+    thought.confidence >= 0.7
+      ? "high"
+      : thought.confidence >= 0.5
+      ? "mid"
+      : "low";
+
+  return (
+    <div class="desk-thought-bubble">
+      <button
+        class="desk-thought-header"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+      >
+        <span class="desk-thought-icon" aria-hidden="true">
+          💭
+        </span>
+        <span class="desk-thought-summary">{thought.intent_summary}</span>
+        <span class={`desk-thought-confidence desk-thought-confidence--${confidenceCls}`}>
+          {confidencePct}%
+        </span>
+        <span class={`desk-thought-chevron${expanded ? " open" : ""}`}>
+          ▾
+        </span>
+      </button>
+      {expanded && (
+        <div class="desk-thought-details">
+          <div class="desk-thought-row">
+            <span class="desk-thought-label">Профиль</span>
+            <span class="desk-thought-value">
+              {profile.emoji} {profile.label}
+            </span>
+          </div>
+          {thought.search_hints && (
+            <div class="desk-thought-row">
+              <span class="desk-thought-label">Фокус</span>
+              <span class="desk-thought-value desk-thought-hints">
+                {thought.search_hints}
+              </span>
+            </div>
+          )}
+          {thought.missing_info?.length > 0 && (
+            <div class="desk-thought-row">
+              <span class="desk-thought-label">Не хватает</span>
+              <span class="desk-thought-value">
+                {thought.missing_info.join(", ")}
+              </span>
+            </div>
+          )}
+          {thought.tool_plan?.length > 0 && (
+            <div class="desk-thought-row">
+              <span class="desk-thought-label">План</span>
+              <span class="desk-thought-value desk-thought-plan">
+                {thought.tool_plan.map((step, i) => (
+                  <span key={i} class="desk-thought-step">
+                    {i > 0 && <span class="desk-thought-arrow">→</span>}
+                    {step}
+                  </span>
+                ))}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Clarify bubble ──
 const CLARIFY_LABELS = {
   countries: "Страна",
   nights: "Ночи",
   guests: "Туристы",
+  q1: "Вопрос 1",
+  q2: "Вопрос 2",
+  q3: "Вопрос 3",
 };
 
 function ClarifyBubble({ message, onSearch }) {
@@ -738,6 +829,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           progress: 0,
           hotelsFound: 0,
           hotelNames: [],
+          thought: null,
           streamingAnalysis: "",
           structured: null,
           plain_text: null,
@@ -811,6 +903,18 @@ export default function DeskView({ sessionId, onTurnComplete }) {
               return;
             }
             if (chunk.type === "done") return;
+            if (chunk.type === "thought") {
+              updateMessage(aiId, {
+                thought: {
+                  intent_summary: chunk.intent_summary,
+                  travel_profile: chunk.travel_profile,
+                  confidence: chunk.confidence,
+                  missing_info: chunk.missing_info ?? [],
+                  tool_plan: chunk.tool_plan ?? [],
+                  search_hints: chunk.search_hints ?? "",
+                },
+              });
+            }
             if (chunk.type === "status") {
               updateMessage(aiId, {
                 state: "thinking",
@@ -1158,20 +1262,30 @@ export default function DeskView({ sessionId, onTurnComplete }) {
               );
             }
             return (
-              <ThinkingBubble
-                key={m.id}
-                statusText={m.statusText}
-                progress={m.progress}
-                hotelsFound={m.hotelsFound}
-                hotelNames={m.hotelNames}
-              />
+              <div key={m.id}>
+                {m.thought && <ThoughtBubble thought={m.thought} />}
+                <ThinkingBubble
+                  statusText={m.statusText}
+                  progress={m.progress}
+                  hotelsFound={m.hotelsFound}
+                  hotelNames={m.hotelNames}
+                />
+              </div>
             );
           }
           if (m.state === "analyzing")
-            return <StreamingAnalysis key={m.id} text={m.streamingAnalysis} />;
+            return (
+              <div key={m.id}>
+                {m.thought && <ThoughtBubble thought={m.thought} />}
+                <StreamingAnalysis text={m.streamingAnalysis} />
+              </div>
+            );
           if (m.state === "clarify")
             return (
-              <ClarifyBubble key={m.id} message={m} onSearch={handleSend} />
+              <div key={m.id}>
+                {m.thought && <ThoughtBubble thought={m.thought} />}
+                <ClarifyBubble message={m} onSearch={handleSend} />
+              </div>
             );
           if (m.state === "error") {
             return (
@@ -1185,6 +1299,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           if (m.structured) {
             return (
               <div key={m.id} class="desk-result-wrap">
+                {m.thought && <ThoughtBubble thought={m.thought} />}
                 <div class="desk-avatar" aria-label="Welgo Desk AI">
                   D
                 </div>

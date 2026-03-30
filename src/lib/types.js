@@ -113,10 +113,27 @@
  * @property {string|null} [operator]
  */
 
+// ─── Agent strategy / reasoning (app/schemas/desk.py) ────────────────────────
+
+/**
+ * @typedef {'family_beach'|'couple_romantic'|'solo_adventure'|'business_quick'|'luxury_relaxation'|'budget_getaway'} TravelProfile
+ */
+
+/**
+ * Hidden agent reasoning metadata — displayed in the "Thought" panel.
+ * @typedef {Object} AgentThought
+ * @property {string} intent_summary - What the client actually wants
+ * @property {TravelProfile} travel_profile - Inferred traveler type
+ * @property {number} confidence - 0-1 search confidence score
+ * @property {string[]} missing_info - Key info not provided
+ * @property {string[]} tool_plan - Ordered tool execution plan
+ * @property {string} search_hints - Expert hints for the analysis step
+ */
+
 // ─── SSE event types (app/core/events.py) ────────────────────────────────────
 
 /**
- * @typedef {'status'|'progress'|'analysis_stream'|'result'|'clarify'|'plain'|'done'|'error'|'gather_client'} SSEEventType
+ * @typedef {'status'|'progress'|'analysis_stream'|'result'|'clarify'|'plain'|'done'|'error'|'gather_client'|'thought'} SSEEventType
  */
 
 // ─── Auth schemas (app/schemas/auth.py) ──────────────────────────────────────
