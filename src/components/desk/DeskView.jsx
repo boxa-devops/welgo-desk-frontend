@@ -705,19 +705,12 @@ export default function DeskView({ sessionId, onTurnComplete }) {
       setIsThinking(true);
 
       try {
-        // Build conversation history so the backend understands short refinements
-        // like "в апреле" in the context of the previous search query.
-        const history = messagesRef.current
-          .filter((m) => m.type === "user" && m.text)
-          .map((m) => m.text);
-
         const resp = await apiFetch("/api/desk/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: rawText,
             session_id: sessionId,
-            history,
             blacklist,
             context_actions: contextActions,
             ...(clientInfo ? { client_info: clientInfo } : {}),
@@ -726,10 +719,20 @@ export default function DeskView({ sessionId, onTurnComplete }) {
 
         if (!resp.ok) {
           const errText = await resp.text();
-          let msg = errText;
+          let detail = errText;
           try {
-            msg = JSON.parse(errText).detail ?? errText;
+            detail = JSON.parse(errText).detail ?? errText;
           } catch {}
+          // Domain-specific error messages for known backend exceptions
+          const status = resp.status;
+          let msg = detail;
+          if (status === 403 && /лимит поисков исчерпан/i.test(detail)) {
+            msg = detail; // already user-friendly from backend
+          } else if (status === 403 && /организация деактивирована/i.test(detail)) {
+            msg = detail;
+          } else if (status === 503) {
+            msg = "Сервис временно недоступен. Попробуйте позже.";
+          }
           updateMessage(aiId, { state: "error", error: msg });
           return;
         }

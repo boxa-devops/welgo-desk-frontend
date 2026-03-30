@@ -69,14 +69,11 @@ export default function OnboardingPage() {
         const data = await r.json().catch(() => ({}));
         throw new Error(data.detail ?? `Ошибка ${r.status}`);
       }
-      const profile = await r.json();
+      const data = await r.json();
       posthog.capture("org_created", { org_name: orgName.trim() });
       setProfile({
-        profile_id: profile.profile_id,
-        org_id: profile.org_id,
+        ...data,
         full_name: fullName.trim(),
-        role: profile.role,
-        credits_balance: profile.credits_balance,
       });
     } catch (err) {
       setError(err.message);
@@ -105,14 +102,11 @@ export default function OnboardingPage() {
         const data = await r.json().catch(() => ({}));
         throw new Error(data.detail ?? `Ошибка ${r.status}`);
       }
-      const profile = await r.json();
+      const data = await r.json();
       posthog.capture("org_joined");
       setProfile({
-        profile_id: profile.profile_id,
-        org_id: profile.org_id,
+        ...data,
         full_name: fullName.trim(),
-        role: profile.role,
-        credits_balance: profile.credits_balance,
       });
     } catch (err) {
       setError(err.message);
