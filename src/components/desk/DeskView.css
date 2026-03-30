@@ -941,6 +941,40 @@
   border-color: var(--brand);
 }
 
+.desk-phone-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 120px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color var(--transition);
+}
+
+.desk-phone-wrapper:focus-within {
+  border-color: var(--brand);
+}
+
+.desk-phone-prefix {
+  padding: 0 6px 0 10px;
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.desk-phone-input {
+  flex: 1;
+  width: 0;
+  border: none !important;
+  height: 100%;
+  background: transparent;
+  padding: 0 10px 0 0;
+  min-width: 0;
+}
+
 .desk-gather-client-actions {
   display: flex;
   align-items: center;

@@ -131,11 +131,11 @@ function PendingClientForm({ form, sessionId, onDone }) {
       await apiFetch("/api/desk/client_info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, ...values }),
+        body: JSON.stringify({ session_id: sessionId, ...values, phone: phoneDisplayToValue(values.phone) }),
       });
     } finally {
       setSaving(false);
-      onDone(values);
+      onDone({ ...values, phone: phoneDisplayToValue(values.phone) });
     }
   };
 
@@ -146,18 +146,33 @@ function PendingClientForm({ form, sessionId, onDone }) {
         <span class="desk-gather-client-desc">{form.description}</span>
       </div>
       <div class="desk-gather-client-fields">
-        {form.fields.map((f) => (
-          <input
-            key={f.key}
-            class="desk-gather-client-input"
-            type={f.key === "phone" ? "tel" : "text"}
-            placeholder={f.placeholder}
-            value={values[f.key]}
-            onInput={(e) =>
-              setValues((prev) => ({ ...prev, [f.key]: e.target.value }))
-            }
-          />
-        ))}
+        {form.fields.map((f) =>
+          f.key === "phone" ? (
+            <div key={f.key} class="desk-phone-wrapper">
+              <span class="desk-phone-prefix">+998</span>
+              <input
+                class="desk-gather-client-input desk-phone-input"
+                type="tel"
+                placeholder="90 123 45 67"
+                value={values.phone}
+                onInput={(e) => {
+                  const display = formatUzPhone(e.target.value);
+                  e.target.value = display;
+                  setValues((prev) => ({ ...prev, phone: display }));
+                }}
+              />
+            </div>
+          ) : (
+            <input
+              key={f.key}
+              class="desk-gather-client-input"
+              type="text"
+              placeholder={f.placeholder}
+              value={values[f.key]}
+              onInput={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+            />
+          )
+        )}
       </div>
       <div class="desk-gather-client-actions">
         <button
@@ -233,6 +248,19 @@ function ThinkingBubble({ statusText, progress, hotelsFound, hotelNames }) {
 }
 
 // ── Gather client info form (shown while search runs) ──
+// Formats 9 UZ digits as "XX XXX XX XX", stores as "+998XXXXXXXXX"
+function formatUzPhone(raw) {
+  const digits = raw.replace(/\D/g, "").slice(0, 9);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return digits.slice(0, 2) + " " + digits.slice(2);
+  if (digits.length <= 7) return digits.slice(0, 2) + " " + digits.slice(2, 5) + " " + digits.slice(5);
+  return digits.slice(0, 2) + " " + digits.slice(2, 5) + " " + digits.slice(5, 7) + " " + digits.slice(7);
+}
+function phoneDisplayToValue(display) {
+  const digits = display.replace(/\D/g, "");
+  return digits ? "+998" + digits : "";
+}
+
 function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
   const [values, setValues] = useState({});
 
@@ -241,7 +269,8 @@ function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
   const handleSubmit = () => {
     const result = {};
     (data.fields || []).forEach((f) => {
-      if (values[f.key]?.trim()) result[f.key] = values[f.key].trim();
+      if (values[f.key]?.trim())
+        result[f.key] = f.key === "phone" ? phoneDisplayToValue(values[f.key]) : values[f.key].trim();
     });
     onSubmit(result);
   };
@@ -274,14 +303,32 @@ function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
           {(data.fields || []).map((field) => (
             <div class="desk-gather-field" key={field.key}>
               <label class="desk-gather-label">{field.label}</label>
-              <input
-                class="desk-gather-input"
-                type={field.key === "phone" ? "tel" : "text"}
-                placeholder={field.placeholder || ""}
-                value={values[field.key] || ""}
-                onInput={(e) => set(field.key, e.target.value)}
-                autocomplete="off"
-              />
+              {field.key === "phone" ? (
+                <div class="desk-phone-wrapper">
+                  <span class="desk-phone-prefix">+998</span>
+                  <input
+                    class="desk-gather-input desk-phone-input"
+                    type="tel"
+                    placeholder="90 123 45 67"
+                    value={values.phone || ""}
+                    onInput={(e) => {
+                      const display = formatUzPhone(e.target.value);
+                      e.target.value = display;
+                      set("phone", display);
+                    }}
+                    autocomplete="off"
+                  />
+                </div>
+              ) : (
+                <input
+                  class="desk-gather-input"
+                  type="text"
+                  placeholder={field.placeholder || ""}
+                  value={values[field.key] || ""}
+                  onInput={(e) => set(field.key, e.target.value)}
+                  autocomplete="off"
+                />
+              )}
             </div>
           ))}
         </div>
