@@ -1399,20 +1399,22 @@ export default function DeskView({ sessionId, onTurnComplete }) {
             return <PlainBubble key={m.id} text={m.plain_text} />;
           if (m.structured) {
             return (
-              <div key={m.id} class="desk-result-wrap">
+              <div key={m.id}>
                 {m.thought && <ThoughtBubble thought={m.thought} />}
-                <div class="desk-avatar" aria-label="Welgo Desk AI">
-                  D
+                <div class="desk-result-wrap">
+                  <div class="desk-avatar" aria-label="Welgo Desk AI">
+                    D
+                  </div>
+                  <StructuredResult
+                    message={m}
+                    sessionId={sessionId}
+                    onHide={handleHide}
+                    onShowAll={() => {
+                      posthog.capture("all_hotels_opened");
+                      setAllHotelsOpen(true);
+                    }}
+                  />
                 </div>
-                <StructuredResult
-                  message={m}
-                  sessionId={sessionId}
-                  onHide={handleHide}
-                  onShowAll={() => {
-                    posthog.capture("all_hotels_opened");
-                    setAllHotelsOpen(true);
-                  }}
-                />
               </div>
             );
           }

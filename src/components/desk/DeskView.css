@@ -346,6 +346,8 @@
   align-items: flex-start;
   gap: 10px;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .desk-result-wrap > .desk-avatar {
@@ -371,6 +373,8 @@
   background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
   border: 1.5px solid #86EFAC;
   border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .desk-rec-hero-icon {
@@ -384,6 +388,8 @@
   font-weight: 700;
   color: #14532D;
   line-height: 1.5;
+  min-width: 0;
+  word-break: break-word;
 }
 
 /* ── Verdict rest text — concise follow-up sentences ── */
@@ -393,6 +399,7 @@
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.6;
+  word-break: break-word;
 }
 
 /* ── Tier selector ── */
@@ -1053,6 +1060,7 @@
   background: color-mix(in srgb, var(--surface) 92%, var(--accent));
   overflow: hidden;
   font-size: 12px;
+  max-width: 100%;
 }
 
 .desk-thought-header {
@@ -1132,6 +1140,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
+  min-width: 0;
 }
 
 .desk-thought-label {
@@ -1147,6 +1156,8 @@
 .desk-thought-value {
   color: var(--text);
   font-size: 12px;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .desk-thought-hints {
