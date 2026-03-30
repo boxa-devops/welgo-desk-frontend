@@ -208,6 +208,59 @@ function ClarifyBubble({ message, onSearch }) {
   );
 }
 
+// ── Alternatives bubble — LLM-generated recovery for zero results ──
+function AlternativesBubble({ message, onSearch }) {
+  const { alternatives } = message;
+  const posthog = usePostHog();
+
+  if (!alternatives) return null;
+
+  return (
+    <div class="desk-ai-plain">
+      <div class="desk-avatar" aria-label="Welgo Desk AI">D</div>
+      <div class="desk-alternatives-bubble">
+        <div class="desk-alt-diagnosis">
+          <span class="desk-alt-icon" aria-hidden="true">🔍</span>
+          <p class="desk-alt-diagnosis-text">{alternatives.diagnosis}</p>
+        </div>
+
+        {alternatives.market_insight && (
+          <div class="desk-alt-insight">
+            <span class="desk-alt-insight-icon" aria-hidden="true">💡</span>
+            <p class="desk-alt-insight-text">{alternatives.market_insight}</p>
+          </div>
+        )}
+
+        <div class="desk-alt-suggestions">
+          <span class="desk-alt-suggestions-label">Что можно сделать:</span>
+          {alternatives.suggestions.map((s, i) => (
+            <button
+              key={i}
+              class="desk-alt-suggestion-btn"
+              onClick={() => {
+                posthog.capture("alternative_suggestion_clicked", {
+                  label: s.label,
+                  index: i,
+                });
+                onSearch(s.message);
+              }}
+              title={s.why || s.label}
+            >
+              <span class="desk-alt-suggestion-label">{s.label}</span>
+              {s.why && (
+                <span class="desk-alt-suggestion-why">{s.why}</span>
+              )}
+              <span class="desk-alt-suggestion-arrow" aria-hidden="true">→</span>
+            </button>
+          ))}
+        </div>
+
+        <p class="desk-alt-hint">Или введите свой вариант поиска в поле ниже</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Client detail form (sticky panel, persists until filled or skipped) ──
 function PendingClientForm({ form, sessionId, onDone }) {
   const [values, setValues] = useState({ name: "", phone: "", notes: "" });
@@ -600,15 +653,41 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
 
   const selCount = selectedIds.size;
 
+  // Build annotation lookup: hotel_name → annotation object
+  const annotations = message.hotel_annotations ?? [];
+  const annMap = {};
+  for (const a of annotations) {
+    if (a.hotel_name) annMap[a.hotel_name] = a;
+  }
+
+  // Extract the first bold sentence from ai_analysis as the hero recommendation
+  const recMatch = structured.ai_analysis?.match(/\*\*(.+?)\*\*/);
+  const recHeroText = recMatch ? recMatch[1] : null;
+  // The rest after the first bold sentence (for the collapsed analysis)
+  const recRestText = recHeroText
+    ? structured.ai_analysis.replace(`**${recHeroText}**`, '').trim()
+    : structured.ai_analysis;
+
   return (
     <div class="desk-result-block">
-      <DeskAnalysisPanel
-        text={structured.ai_analysis}
-        fromCache={structured.meta?.from_cache}
-        totalFound={total}
-      />
+      {/* 1. RECOMMENDATION HERO — the focal point */}
+      {recHeroText && (
+        <div class="desk-rec-hero">
+          <span class="desk-rec-hero-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>
+            </svg>
+          </span>
+          <span class="desk-rec-hero-text">{recHeroText}</span>
+        </div>
+      )}
 
-      {/* Tier selector — only show when there are 2+ distinct tiers */}
+      {/* 2. Concise verdict (rest after hero, if any — shown inline) */}
+      {recRestText && (
+        <p class="desk-verdict-rest">{recRestText}</p>
+      )}
+
+      {/* 3. Tier selector */}
       {presentTiers.length > 1 && (
         <div
           class="desk-tier-selector"
@@ -646,6 +725,7 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
         </div>
       )}
 
+      {/* 4. Hotel cards with annotations */}
       {visibleHotels.length === 0 ? (
         <p class="desk-no-results">Нет вариантов по выбранному критерию.</p>
       ) : (
@@ -657,6 +737,7 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
               onHide={(name) => onHide(name)}
               selected={selectedIds.has(h.hotel_id)}
               onSelect={handleSelect}
+              annotation={annMap[h.hotel_name] ?? null}
             />
           ))}
         </div>
@@ -712,6 +793,13 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
           <span class="desk-show-all-btn-count">{total}</span>
         </button>
       )}
+
+      {/* 5. Analysis — collapsed by default (expandable deep dive) */}
+      <DeskAnalysisPanel
+        text={structured.ai_analysis}
+        fromCache={structured.meta?.from_cache}
+        totalFound={total}
+      />
 
       <DeskQuoteBox text={customQuote ?? structured.client_quote} />
     </div>
@@ -832,8 +920,10 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           thought: null,
           streamingAnalysis: "",
           structured: null,
+          hotel_annotations: [],
           plain_text: null,
           clarify: null,
+          alternatives: null,
           filteredHotels: null,
           filterState: EMPTY_FILTER,
           filterLoading: false,
@@ -948,10 +1038,14 @@ export default function DeskView({ sessionId, onTurnComplete }) {
               updateMessage(aiId, {
                 state: "done",
                 structured: chunk.structured,
+                hotel_annotations: chunk.hotel_annotations ?? [],
               });
             }
             if (chunk.type === "clarify") {
               updateMessage(aiId, { state: "clarify", clarify: chunk });
+            }
+            if (chunk.type === "alternatives") {
+              updateMessage(aiId, { state: "alternatives", alternatives: chunk });
             }
             if (chunk.type === "plain") {
               updateMessage(aiId, { state: "done", plain_text: chunk.text });
@@ -1285,6 +1379,13 @@ export default function DeskView({ sessionId, onTurnComplete }) {
               <div key={m.id}>
                 {m.thought && <ThoughtBubble thought={m.thought} />}
                 <ClarifyBubble message={m} onSearch={handleSend} />
+              </div>
+            );
+          if (m.state === "alternatives")
+            return (
+              <div key={m.id}>
+                {m.thought && <ThoughtBubble thought={m.thought} />}
+                <AlternativesBubble message={m} onSearch={handleSend} />
               </div>
             );
           if (m.state === "error") {

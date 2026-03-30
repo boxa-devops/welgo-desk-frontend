@@ -189,7 +189,7 @@ function fmtPillDate(dateStr) {
   return `${day} ${MONTHS_SHORT[mo]}`;
 }
 
-export default function DeskHotelCard({ hotel, onHide, selected, onSelect }) {
+export default function DeskHotelCard({ hotel, onHide, selected, onSelect, annotation }) {
   const posthog = usePostHog();
   const rc = ratingClass(hotel.rating);
   const tier = hotel.value_tier;
@@ -245,7 +245,17 @@ export default function DeskHotelCard({ hotel, onHide, selected, onSelect }) {
 
       {/* Body */}
       <div class="dhcard-body">
-        <div class="dhcard-name">{hotel.hotel_name}</div>
+        <div class="dhcard-name-row">
+          <div class="dhcard-name">{hotel.hotel_name}</div>
+          {annotation?.is_recommended && (
+            <span class="dhcard-rec-badge" title="Рекомендация AI">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>
+              </svg>
+              Рекомендован
+            </span>
+          )}
+        </div>
 
         <div class="dhcard-meta">
           <span class="dhcard-stars" aria-label={`${hotel.stars} звёзд`}>
@@ -254,6 +264,22 @@ export default function DeskHotelCard({ hotel, onHide, selected, onSelect }) {
           <span class={`dhcard-rating ${rc}`}>{hotel.rating.toFixed(1)}</span>
           <span class="dhcard-region">{hotel.region}</span>
         </div>
+
+        {/* Professional insight — green */}
+        {annotation?.insight && (
+          <div class="dhcard-insight">
+            <span class="dhcard-insight-icon" aria-hidden="true">✓</span>
+            <span class="dhcard-insight-text">{annotation.insight}</span>
+          </div>
+        )}
+
+        {/* Red flag — red */}
+        {annotation?.red_flag && (
+          <div class="dhcard-flag">
+            <span class="dhcard-flag-icon" aria-hidden="true">!</span>
+            <span class="dhcard-flag-text">{annotation.red_flag}</span>
+          </div>
+        )}
 
         {/* Features chips */}
         {hotel.features?.length > 0 && (

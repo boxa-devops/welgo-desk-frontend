@@ -130,10 +130,29 @@
  * @property {string} search_hints - Expert hints for the analysis step
  */
 
+// ─── Alternative strategies (app/schemas/desk.py) ────────────────────────────
+
+/**
+ * One concrete action-button the agent can click after zero search results.
+ * @typedef {Object} AlternativeSuggestion
+ * @property {string} label - Short button text (max ~40 chars)
+ * @property {string} message - Full search query to send on click
+ * @property {string} why - One-sentence explanation
+ */
+
+/**
+ * LLM-generated recovery plan on zero search results.
+ * @typedef {Object} AlternativeStrategy
+ * @property {string} diagnosis - Professional explanation of WHY zero results
+ * @property {AlternativeSuggestion[]} suggestions - 2-4 clickable next-step actions
+ * @property {string} market_insight - Expert context about destination/season
+ * @property {Object} partial - Partial extracted params for context
+ */
+
 // ─── SSE event types (app/core/events.py) ────────────────────────────────────
 
 /**
- * @typedef {'status'|'progress'|'analysis_stream'|'result'|'clarify'|'plain'|'done'|'error'|'gather_client'|'thought'} SSEEventType
+ * @typedef {'status'|'progress'|'analysis_stream'|'result'|'clarify'|'plain'|'done'|'error'|'gather_client'|'thought'|'alternatives'} SSEEventType
  */
 
 // ─── Auth schemas (app/schemas/auth.py) ──────────────────────────────────────
