@@ -1,4 +1,4 @@
-import { useRef } from 'preact/hooks';
+import { useState, useRef } from 'preact/hooks';
 import { fmtUzs } from '../../utils.js';
 import './DeskFilterBar.css';
 
@@ -6,26 +6,44 @@ const DEBOUNCE_MS = 350;
 
 export default function DeskFilterBar({ filters, value, onChange, loading }) {
   const timerRef = useRef(null);
+  const [operatorSearch, setOperatorSearch] = useState('');
 
   if (!filters) return null;
 
-  const { min_price_uzs, max_price_uzs, meal_plans = [], stars_available = [] } = filters;
+  const { min_price_uzs, max_price_uzs, meal_plans = [], stars_available = [], operators = [] } = filters;
   const range = max_price_uzs - min_price_uzs || 1;
 
   const schedule = (patch) => {
     const next = { ...value, ...patch };
-    onChange(next); // update local state immediately for UI responsiveness
+    onChange(next);
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => onChange(next, true), DEBOUNCE_MS);
-    // second arg `true` signals parent to actually call /api/desk/filter
   };
 
   const priceMin = value.priceMin ?? min_price_uzs;
   const priceMax = value.priceMax ?? max_price_uzs;
-
-  // % positions for the slider track fill
   const minPct = ((priceMin - min_price_uzs) / range) * 100;
   const maxPct = ((priceMax - min_price_uzs) / range) * 100;
+
+  // Operator multi-select
+  const selectedOps = value.operators ?? [];
+
+  const toggleOperator = (op) => {
+    const next = selectedOps.includes(op)
+      ? selectedOps.filter(o => o !== op)
+      : [...selectedOps, op];
+    schedule({ operators: next });
+  };
+
+  const clearOperators = () => {
+    schedule({ operators: [] });
+    setOperatorSearch('');
+  };
+
+  const opQuery = operatorSearch.toLowerCase();
+  const visibleOperators = opQuery
+    ? operators.filter(op => op.toLowerCase().includes(opQuery))
+    : operators;
 
   return (
     <div class="dfb-root">
@@ -43,12 +61,10 @@ export default function DeskFilterBar({ filters, value, onChange, loading }) {
             Цена: <strong>{fmtUzs(priceMin)}</strong> — <strong>{fmtUzs(priceMax)}</strong> сум
           </label>
           <div class="dfb-slider-wrap">
-            {/* Track fill */}
             <div
               class="dfb-track-fill"
               style={{ left: `${minPct}%`, width: `${maxPct - minPct}%` }}
             />
-            {/* Min thumb */}
             <input
               type="range"
               class="dfb-range dfb-range--min"
@@ -62,7 +78,6 @@ export default function DeskFilterBar({ filters, value, onChange, loading }) {
               }}
               aria-label="Минимальная цена"
             />
-            {/* Max thumb */}
             <input
               type="range"
               class="dfb-range dfb-range--max"
@@ -125,6 +140,54 @@ export default function DeskFilterBar({ filters, value, onChange, loading }) {
                   {m}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Operators filter (multi-select + search) ── */}
+        {operators.length > 1 && (
+          <div class="dfb-group">
+            <div class="dfb-label-row">
+              <label class="dfb-label">Операторы</label>
+              {selectedOps.length > 0 && (
+                <button class="dfb-ops-clear" onClick={clearOperators}>
+                  Сбросить ({selectedOps.length})
+                </button>
+              )}
+            </div>
+
+            {operators.length > 5 && (
+              <input
+                class="dfb-ops-search"
+                type="search"
+                placeholder="Найти оператора…"
+                value={operatorSearch}
+                onInput={e => setOperatorSearch(e.target.value)}
+              />
+            )}
+
+            <div class="dfb-ops-list" role="group" aria-label="Туроператоры">
+              {visibleOperators.map(op => {
+                const isSelected = selectedOps.includes(op);
+                return (
+                  <button
+                    key={op}
+                    class={`dfb-pill dfb-pill--op${isSelected ? ' dfb-pill--active' : ''}`}
+                    onClick={() => toggleOperator(op)}
+                    aria-pressed={isSelected}
+                  >
+                    {isSelected && (
+                      <svg class="dfb-pill-check" viewBox="0 0 12 10" width="10" height="8">
+                        <path d="M1 5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    )}
+                    {op}
+                  </button>
+                );
+              })}
+              {opQuery && visibleOperators.length === 0 && (
+                <span class="dfb-ops-empty">Не найдено</span>
+              )}
             </div>
           </div>
         )}

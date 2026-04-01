@@ -1,10 +1,12 @@
 import { useState } from "preact/hooks";
 import { supabase } from "../../lib/supabase.js";
 import { usePostHog } from "../../lib/posthog.jsx";
+import { useI18n } from "../../lib/i18n/index.jsx";
 import "./LoginPage.css";
 
 export default function LoginPage() {
   const posthog = usePostHog();
+  const { t } = useI18n();
   const [tab, setTab] = useState("login"); // 'login' | 'register'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,15 +28,14 @@ export default function LoginPage() {
         });
         if (err) throw err;
         posthog.capture("user_logged_in");
-        // AuthContext will react to onAuthStateChange automatically
       } else {
         const { error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
         posthog.capture("user_registered");
-        setInfo("Письмо с подтверждением отправлено. Проверьте почту.");
+        setInfo(t("auth.email_sent"));
       }
     } catch (err) {
-      setError(err.message ?? "Что-то пошло не так");
+      setError(err.message ?? t("auth.error_generic"));
     } finally {
       setLoading(false);
     }
@@ -46,29 +47,21 @@ export default function LoginPage() {
         <div class="login-brand">
           <span class="login-logo">W</span>
           <span class="login-title">Welgo Desk</span>
-          <span class="login-subtitle">Агентский режим</span>
+          <span class="login-subtitle">{t("auth.agent_mode")}</span>
         </div>
 
         <div class="login-tabs">
           <button
             class={`login-tab${tab === "login" ? " active" : ""}`}
-            onClick={() => {
-              setTab("login");
-              setError("");
-              setInfo("");
-            }}
+            onClick={() => { setTab("login"); setError(""); setInfo(""); }}
           >
-            Войти
+            {t("auth.login")}
           </button>
           <button
             class={`login-tab${tab === "register" ? " active" : ""}`}
-            onClick={() => {
-              setTab("register");
-              setError("");
-              setInfo("");
-            }}
+            onClick={() => { setTab("register"); setError(""); setInfo(""); }}
           >
-            Регистрация
+            {t("auth.register")}
           </button>
         </div>
 
@@ -85,18 +78,14 @@ export default function LoginPage() {
             />
           </div>
           <div class="login-field">
-            <label>Пароль</label>
+            <label>{t("auth.password")}</label>
             <input
               type="password"
-              placeholder={
-                tab === "register" ? "Минимум 6 символов" : "••••••••"
-              }
+              placeholder={tab === "register" ? t("auth.min_chars") : "••••••••"}
               value={password}
               onInput={(e) => setPassword(e.target.value)}
               required
-              autocomplete={
-                tab === "login" ? "current-password" : "new-password"
-              }
+              autocomplete={tab === "login" ? "current-password" : "new-password"}
             />
           </div>
 
@@ -105,10 +94,10 @@ export default function LoginPage() {
 
           <button class="login-submit" type="submit" disabled={loading}>
             {loading
-              ? "Загрузка..."
+              ? t("auth.loading")
               : tab === "login"
-              ? "Войти"
-              : "Создать аккаунт"}
+              ? t("auth.login")
+              : t("auth.create_account")}
           </button>
         </form>
       </div>

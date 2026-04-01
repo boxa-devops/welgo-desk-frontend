@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useEffect, useMemo } from 'preact/hooks';
+import { apiFetch } from '../../lib/api.js';
 import './TourPromptBuilder.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Config
+// Config (mirrors backend prompt_generator.py)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DESTINATIONS = [
@@ -43,40 +44,51 @@ const VIBES = [
   { value: 'gastro',     label: '🍽 Гастрономический' },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Core: prompt generator
-// ─────────────────────────────────────────────────────────────────────────────
+// Local instant brief generation (same logic as backend, for real-time preview)
+function localBrief(form) {
+  const DEST_MAP = { turkey: 'Турция', uae: 'ОАЭ', egypt: 'Египет', thailand: 'Таиланд', maldives: 'Мальдивы', domestic: 'Узбекистан' };
+  const BUDGET_MAP = { economy: 'Эконом (до $800)', comfort: 'Комфорт ($800–1800)', luxury: 'Люкс (от $1800)' };
+  const VIBE_MAP = { beach: 'пляжный', excursion: 'экскурсионный', active: 'активный', family: 'семейный', spa: 'SPA и релакс', gastro: 'гастрономический' };
+  const MONTHS_RU = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 
-export function generatePrompt(form) {
-  const dest = form.destination === 'custom'
-    ? (form.customDestination?.trim() || 'неизвестное направление')
-    : (DESTINATIONS.find(d => d.value === form.destination)?.label ?? form.destination);
-  const month     = form.month ? `в ${MONTHS[form.month - 1]}` : '';
-  const duration  = form.duration ? `на ${form.duration} ночей` : '';
-  const adults    = form.adults ?? 2;
-  const children  = form.children ?? 0;
-  const people    = children > 0
-    ? `${adults} взр. + ${children} реб.`
-    : `${adults} взр.`;
-  const budget    = BUDGETS.find(b => b.value === form.budget)?.label ?? '';
-  const vibeList  = (form.vibes ?? [])
-    .map(v => VIBES.find(x => x.value === v)?.label ?? v)
-    .join(', ');
+  const dest = DEST_MAP[form.destination] || form.customDestination || form.destination;
+  const month = form.month ? ` в ${MONTHS_RU[form.month - 1]}` : '';
+  const people = form.children > 0
+    ? `${form.adults} взр. + ${form.children} реб.`
+    : `${form.adults} взрослых`;
+  const vibes = form.vibes.map(v => VIBE_MAP[v] || v).filter(Boolean).join(', ');
+  const budget = BUDGET_MAP[form.budget] || '';
+  const extras = form.extraChips?.length ? `Важно: ${form.extraChips.join(', ')}.` : '';
 
-  const departure = form.departureCity ? `из ${form.departureCity}` : '';
-
-  const parts = [
-    `Ты — экспертный турагент Welgo.`,
-    `Составь подборку туров в ${dest}${month ? ' ' + month : ''}${duration ? ' ' + duration : ''}`,
-    departure ? `${departure}` : '',
-    `для ${people}.`,
-    vibeList  ? `Тип отдыха: ${vibeList}.` : '',
-    budget    ? `Бюджет: ${budget}.` : '',
-    `Сделай акцент на качестве сервиса, реальных отзывах и локальных особенностях курорта.`,
-    `Предложи 3–5 вариантов с кратким описанием каждого отеля.`,
+  return [
+    `Подбери тур в ${dest} на ${form.duration} ночей${month}`,
+    `(вылет из ${form.departureCity}).`,
+    `Состав: ${people}.`,
+    vibes ? `Формат: ${vibes}.` : '',
+    budget ? `Бюджет: ${budget}.` : '',
+    extras,
   ].filter(Boolean).join(' ');
+}
 
-  return parts;
+// Contextual chips based on vibes (mirrors backend CONTEXTUAL_CHIPS)
+const CONTEXTUAL_CHIPS = {
+  beach: ['Первая линия', 'Песчаный пляж', 'Подогреваемый бассейн', 'Водные горки'],
+  family: ['Детский клуб', 'Анимация', 'Мелкий бассейн', 'Детское меню'],
+  spa: ['SPA-центр', 'Хаммам', 'Тёплый бассейн', 'Тихая зона'],
+  excursion: ['Близко к центру', 'Трансфер', 'Гид на русском'],
+  active: ['Дайвинг', 'Снорклинг', 'Водные виды спорта', 'Фитнес-зал'],
+  gastro: ['A-la-carte рестораны', 'Ultra All Inclusive', 'Местная кухня'],
+};
+
+function getChips(vibes) {
+  const seen = new Set();
+  const out = [];
+  for (const v of vibes) {
+    for (const c of CONTEXTUAL_CHIPS[v] || []) {
+      if (!seen.has(c)) { out.push(c); seen.add(c); }
+    }
+  }
+  return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,16 +148,20 @@ const DEFAULT_FORM = {
   children: 0,
   budget: 'comfort',
   vibes: ['beach'],
+  extraChips: [],
 };
 
 export default function TourPromptBuilder({ onSend, onClose }) {
-  const [form, setForm]       = useState(DEFAULT_FORM);
+  const [form, setForm] = useState(DEFAULT_FORM);
   const [preview, setPreview] = useState('');
-  const [generated, setGenerated] = useState(false);
+  const [expertHints, setExpertHints] = useState([]);
+  const [strategy, setStrategy] = useState('');
+  const [polishing, setPolishing] = useState(false);
+  const [edited, setEdited] = useState(false);
 
   const set = useCallback((key, val) => {
     setForm(prev => ({ ...prev, [key]: val }));
-    setGenerated(false);
+    setEdited(false);
   }, []);
 
   const toggleVibe = useCallback((v) => {
@@ -153,19 +169,88 @@ export default function TourPromptBuilder({ onSend, onClose }) {
       const vibes = prev.vibes.includes(v)
         ? prev.vibes.filter(x => x !== v)
         : [...prev.vibes, v];
-      return { ...prev, vibes };
+      const validChips = getChips(vibes);
+      const extraChips = prev.extraChips.filter(c => validChips.includes(c));
+      return { ...prev, vibes, extraChips };
     });
-    setGenerated(false);
+    setEdited(false);
   }, []);
 
-  const handleGenerate = () => {
-    const text = generatePrompt(form);
-    setPreview(text);
-    setGenerated(true);
+  const toggleChip = useCallback((chip) => {
+    setForm(prev => {
+      const extraChips = prev.extraChips.includes(chip)
+        ? prev.extraChips.filter(c => c !== chip)
+        : [...prev.extraChips, chip];
+      return { ...prev, extraChips };
+    });
+    setEdited(false);
+  }, []);
+
+  // Contextual chips for current vibes
+  const contextChips = useMemo(() => getChips(form.vibes), [form.vibes]);
+
+  // Real-time preview + expert hints + strategy from backend
+  useEffect(() => {
+    if (edited) return;
+
+    // Instant local preview first
+    setPreview(localBrief(form));
+
+    // Then call backend for expert layer (debounced)
+    const timer = setTimeout(() => {
+      apiFetch('/api/desk/prompt-builder/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination: form.destination,
+          custom_destination: form.customDestination,
+          departure_city: form.departureCity,
+          month: form.month,
+          duration: form.duration,
+          adults: form.adults,
+          children: form.children,
+          budget: form.budget,
+          vibes: form.vibes,
+          extra_chips: form.extraChips,
+        }),
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return;
+          setPreview(data.brief);
+          setExpertHints(data.expert_hints ?? []);
+          setStrategy(data.strategy ?? '');
+        })
+        .catch(() => {});
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [form, edited]);
+
+  // AI Polish — call backend
+  const handlePolish = async () => {
+    if (polishing || !preview) return;
+    setPolishing(true);
+    try {
+      const resp = await apiFetch('/api/desk/prompt-builder/polish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brief: preview }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setPreview(data.brief);
+        setEdited(true);
+      }
+    } finally {
+      setPolishing(false);
+    }
   };
 
+  // Send directly to the agent
   const handleSend = () => {
-    const text = preview || generatePrompt(form);
+    const text = preview.trim();
+    if (!text) return;
     onSend?.(text);
     onClose?.();
   };
@@ -269,7 +354,6 @@ export default function TourPromptBuilder({ onSend, onClose }) {
               </Field>
             </div>
 
-
             {/* Tourists row */}
             <div class="tpb-row">
               <Field label="Взрослые">
@@ -313,37 +397,97 @@ export default function TourPromptBuilder({ onSend, onClose }) {
               </div>
             </Field>
 
+            {/* Contextual chips — shown based on selected vibes */}
+            {contextChips.length > 0 && (
+              <Field label="Дополнительно">
+                <div class="tpb-chips-group">
+                  {contextChips.map(chip => (
+                    <button
+                      key={chip}
+                      type="button"
+                      class={`tpb-context-chip${form.extraChips.includes(chip) ? ' active' : ''}`}
+                      onClick={() => toggleChip(chip)}
+                    >
+                      {form.extraChips.includes(chip) && (
+                        <svg class="tpb-chip-check" viewBox="0 0 12 10" width="10" height="8">
+                          <path d="M1 5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      )}
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            )}
+
           </div>
 
           {/* ── Preview ── */}
           <div class="tpb-preview-col">
             <div class="tpb-preview-header">
-              <span class="tpb-preview-title">Предпросмотр запроса</span>
-              {generated && (
-                <span class="tpb-preview-badge">Готово к отправке</span>
+              <span class="tpb-preview-title">Черновик запроса</span>
+              {preview && (
+                <span class="tpb-preview-badge">Обновляется в реальном времени</span>
               )}
             </div>
             <textarea
               class="tpb-preview-area"
               value={preview}
-              onInput={e => setPreview(e.target.value)}
-              placeholder="Нажмите «Сгенерировать» — здесь появится текст запроса для MIRA. Вы сможете отредактировать его перед отправкой."
-              rows={10}
+              onInput={e => { setPreview(e.target.value); setEdited(true); }}
+              placeholder="Запрос формируется автоматически по мере выбора параметров…"
+              rows={8}
             />
+
+            {/* Expert hints */}
+            {expertHints.length > 0 && (
+              <div class="tpb-expert-hints">
+                <span class="tpb-expert-hints-icon" aria-hidden="true">💡</span>
+                <div class="tpb-expert-hints-body">
+                  {expertHints.map((h, i) => (
+                    <p key={i} class="tpb-expert-hint">{h}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Live Strategy */}
+            {strategy && (
+              <div class="tpb-strategy">
+                <div class="tpb-strategy-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                  </svg>
+                  Стратегия поиска
+                </div>
+                <p class="tpb-strategy-text">{strategy}</p>
+              </div>
+            )}
+
             <div class="tpb-preview-hint">
               Текст можно отредактировать перед отправкой
             </div>
 
             <div class="tpb-preview-actions">
               <button
-                class="tpb-generate-btn"
+                class="tpb-polish-btn"
                 type="button"
-                onClick={handleGenerate}
+                onClick={handlePolish}
+                disabled={polishing || !preview}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
-                  <path d="M5 3l14 9-14 9V3z"/>
-                </svg>
-                Сгенерировать
+                {polishing ? (
+                  <>
+                    <span class="tpb-polish-spinner" aria-hidden="true" />
+                    Улучшаю…
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                      <path d="M12 2l1.09 3.26L16.18 6l-2.45 2.44L14.36 12 12 10.28 9.64 12l.63-3.56L7.82 6l3.09-.74z"/>
+                      <path d="M5 20l2-2m10 2l-2-2"/>
+                    </svg>
+                    AI Polish
+                  </>
+                )}
               </button>
               <button
                 class="tpb-send-btn"

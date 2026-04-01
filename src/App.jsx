@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { AuthProvider, useAuth } from "./lib/AuthContext.jsx";
+import { I18nProvider, useI18n } from "./lib/i18n/index.jsx";
 import { apiFetch } from "./lib/api.js";
 import LoginPage from "./components/auth/LoginPage.jsx";
 import OnboardingPage from "./components/auth/OnboardingPage.jsx";
@@ -11,6 +12,7 @@ import "./App.css";
 import { usePostHog } from "./lib/posthog.jsx";
 
 function PendingApprovalPage({ profile, signOut }) {
+  const { t } = useI18n();
   return (
     <div
       style={{
@@ -27,7 +29,7 @@ function PendingApprovalPage({ profile, signOut }) {
     >
       <div style={{ fontSize: "40px" }}>⏳</div>
       <h2 style={{ margin: 0, fontWeight: 800, fontSize: "20px" }}>
-        Ожидание активации
+        {t("pending.title")}
       </h2>
       <p
         style={{
@@ -36,11 +38,8 @@ function PendingApprovalPage({ profile, signOut }) {
           fontSize: "14px",
           maxWidth: "360px",
         }}
-      >
-        Агентство <strong>{profile.org_name}</strong> зарегистрировано и ожидает
-        подтверждения от администратора Welgo. Мы свяжемся с вами в ближайшее
-        время.
-      </p>
+        dangerouslySetInnerHTML={{ __html: t("pending.desc", { org: profile.org_name }) }}
+      />
       <button
         onClick={signOut}
         style={{
@@ -54,7 +53,7 @@ function PendingApprovalPage({ profile, signOut }) {
           fontSize: "13px",
         }}
       >
-        Выйти
+        {t("pending.signout")}
       </button>
     </div>
   );
@@ -62,7 +61,13 @@ function PendingApprovalPage({ profile, signOut }) {
 
 function AppShell() {
   const { session, profile, profileLoading, signOut } = useAuth();
+  const { setLang } = useI18n();
   const posthog = usePostHog();
+
+  // Sync i18n language with profile
+  useEffect(() => {
+    if (profile?.language) setLang(profile.language);
+  }, [profile?.language]);
   const [conversations, setConversations] = useState([]);
   const [activeView, setActiveView] = useState(() => {
     if (window.location.hash === "#superadmin") return "superadmin";
@@ -213,7 +218,9 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppShell />
+      <I18nProvider>
+        <AppShell />
+      </I18nProvider>
     </AuthProvider>
   );
 }

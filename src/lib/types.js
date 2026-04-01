@@ -110,7 +110,7 @@
  * @property {number|null} [price_max]
  * @property {number|null} [stars_min]
  * @property {string|null} [meal_plan]
- * @property {string|null} [operator]
+ * @property {string[]} [operators] - Multi-select operator filter
  */
 
 // ─── Agent strategy / reasoning (app/schemas/desk.py) ────────────────────────
@@ -198,9 +198,11 @@ export const ERROR_PATTERNS = {
  * Parse a backend error response into a user-friendly message.
  * @param {number} status - HTTP status code
  * @param {string} detail - Error detail from response JSON
+ * @param {(key: string, params?: object) => string} [t] - Optional i18n translate function
  * @returns {{ message: string, type: 'credits'|'disabled'|'auth'|'config'|'generic' }}
  */
-export function parseApiError(status, detail) {
+export function parseApiError(status, detail, t) {
+  const _t = t || ((key) => key);
   if (status === 403) {
     if (ERROR_PATTERNS.CREDITS_EXHAUSTED.test(detail)) {
       return { message: detail, type: "credits" };
@@ -210,7 +212,7 @@ export function parseApiError(status, detail) {
     }
     if (ERROR_PATTERNS.PROFILE_NOT_FOUND.test(detail)) {
       return {
-        message: "Профиль не найден. Пройдите регистрацию.",
+        message: _t("error.profile_not_found"),
         type: "auth",
       };
     }
@@ -218,21 +220,15 @@ export function parseApiError(status, detail) {
   }
 
   if (status === 503) {
-    if (ERROR_PATTERNS.DESK_NOT_CONFIGURED.test(detail)) {
-      return {
-        message: "Сервис временно недоступен. Попробуйте позже.",
-        type: "config",
-      };
-    }
     return {
-      message: "Сервис временно недоступен. Попробуйте позже.",
+      message: _t("error.service_unavailable"),
       type: "config",
     };
   }
 
   if (status === 404) {
-    return { message: detail || "Не найдено", type: "generic" };
+    return { message: detail || _t("error.not_found"), type: "generic" };
   }
 
-  return { message: detail || `Ошибка сервера (${status})`, type: "generic" };
+  return { message: detail || `${_t("error.server")} (${status})`, type: "generic" };
 }

@@ -1,20 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from "preact/hooks";
 import DeskHotelCard from "./DeskHotelCard.jsx";
-import DeskAnalysisPanel from "./DeskAnalysisPanel.jsx";
+import DeskAnalysisPanel, { splitAnalysis } from "./DeskAnalysisPanel.jsx";
 import DeskQuoteBox from "./DeskQuoteBox.jsx";
 import DeskAllHotelsModal from "./DeskAllHotelsModal.jsx";
 import TourPromptBuilder from "./TourPromptBuilder.jsx";
 import { apiFetch } from "../../lib/api.js";
+import { useI18n } from "../../lib/i18n/index.jsx";
 import "./DeskView.css";
 import { usePostHog } from "../../lib/posthog.jsx";
 
-// ── Desk-specific search chips ──
-const DESK_CHIPS = [
-  "Турция, UAI, 7 ночей, бюджет до $1000",
-  "ОАЭ, 5★, 7 ночей из Ташкента",
-  "Таиланд, 2 взрослых + 1 ребёнок, пляж",
-  "Мальдивы, медовый месяц, люкс",
-];
+function getDeskChips(t) {
+  return [t("desk.chip1"), t("desk.chip2"), t("desk.chip3"), t("desk.chip4")];
+}
 
 const SendIcon = () => (
   <svg
@@ -38,26 +35,28 @@ const EMPTY_FILTER = {
   priceMax: null,
   starsMin: null,
   mealPlan: null,
+  operators: [],
 };
 
-// ── Travel profile display labels ──
-const PROFILE_LABELS = {
-  family_beach: { label: "Семейный пляж", emoji: "👨‍👩‍👧" },
-  couple_romantic: { label: "Романтика", emoji: "💑" },
-  solo_adventure: { label: "Соло", emoji: "🧳" },
-  business_quick: { label: "Деловая", emoji: "💼" },
-  luxury_relaxation: { label: "Люкс", emoji: "✨" },
-  budget_getaway: { label: "Бюджет", emoji: "💰" },
+// ── Travel profile emoji map (labels from i18n) ──
+const PROFILE_EMOJI = {
+  family_beach: "👨‍👩‍👧",
+  couple_romantic: "💑",
+  solo_adventure: "🧳",
+  business_quick: "💼",
+  luxury_relaxation: "✨",
+  budget_getaway: "💰",
 };
 
 // ── Thought bubble — displays agent reasoning process ──
 function ThoughtBubble({ thought }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useI18n();
   if (!thought) return null;
-
-  const profile = PROFILE_LABELS[thought.travel_profile] ?? {
-    label: thought.travel_profile,
-    emoji: "🤔",
+  const profileKey = `thought.${thought.travel_profile}`;
+  const profile = {
+    label: t(profileKey) !== profileKey ? t(profileKey) : thought.travel_profile,
+    emoji: PROFILE_EMOJI[thought.travel_profile] ?? "🤔",
   };
   const confidencePct = Math.round(thought.confidence * 100);
   const confidenceCls =
@@ -129,18 +128,22 @@ function ThoughtBubble({ thought }) {
 }
 
 // ── Clarify bubble ──
-const CLARIFY_LABELS = {
-  countries: "Страна",
-  nights: "Ночи",
-  guests: "Туристы",
-  q1: "Вопрос 1",
-  q2: "Вопрос 2",
-  q3: "Вопрос 3",
-};
+function getClarifyLabels(t) {
+  return {
+    countries: t("clarify.countries"),
+    nights: t("clarify.nights"),
+    guests: t("clarify.guests"),
+    q1: t("clarify.q1"),
+    q2: t("clarify.q2"),
+    q3: t("clarify.q3"),
+  };
+}
 
 function ClarifyBubble({ message, onSearch }) {
   const { clarify } = message;
   const posthog = usePostHog();
+  const { t } = useI18n();
+  const CLARIFY_LABELS = getClarifyLabels(t);
   const [selections, setSelections] = useState({});
 
   if (!clarify) return null;
@@ -263,6 +266,7 @@ function AlternativesBubble({ message, onSearch }) {
 
 // ── Client detail form (sticky panel, persists until filled or skipped) ──
 function PendingClientForm({ form, sessionId, onDone }) {
+  const { t } = useI18n();
   const [values, setValues] = useState({ name: "", phone: "", notes: "" });
   const [saving, setSaving] = useState(false);
 
@@ -324,7 +328,7 @@ function PendingClientForm({ form, sessionId, onDone }) {
           onClick={handleSubmit}
           disabled={!hasAny || saving}
         >
-          {saving ? "Сохраняю…" : "Сохранить"}
+          {saving ? t("desk.saving") : t("desk.save")}
         </button>
         {form.skippable && (
           <button class="desk-gather-client-skip" onClick={() => onDone(null)}>
@@ -355,13 +359,13 @@ function ThinkingBubble({ statusText, progress, hotelsFound, hotelNames }) {
       <div class="desk-avatar">D</div>
       <div class="desk-thinking">
         <div class="desk-thinking-row">
-          <div class="desk-thinking-dots" aria-label="Анализирую…">
+          <div class="desk-thinking-dots" aria-label={t("desk.analyzing")}>
             <span />
             <span />
             <span />
           </div>
           <span class="desk-thinking-label">
-            {statusText || "Анализирую предложения…"}
+            {statusText || t("desk.analyzing_offers")}
           </span>
         </div>
         {hotelNames && hotelNames.length > 0 && (
@@ -406,6 +410,7 @@ function phoneDisplayToValue(display) {
 }
 
 function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
+  const { t } = useI18n();
   const [values, setValues] = useState({});
 
   const set = (key, val) => setValues((prev) => ({ ...prev, [key]: val }));
@@ -425,10 +430,10 @@ function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
       <div class="desk-gather-client">
         <div class="desk-gather-header">
           <span class="desk-gather-title">
-            {data.title || "Данные клиента"}
+            {data.title || t("desk.client_data")}
           </span>
           <span class="desk-gather-desc">
-            {data.description || "Заполните пока идёт поиск"}
+            {data.description || t("desk.fill_while_search")}
           </span>
         </div>
 
@@ -479,11 +484,11 @@ function GatherClientBubble({ data, progress, onSubmit, onSkip }) {
 
         <div class="desk-gather-actions">
           <button class="desk-gather-submit" onClick={handleSubmit}>
-            Сохранить →
+            {t("desk.save")} →
           </button>
           {data.skippable && (
             <button class="desk-gather-skip" onClick={onSkip}>
-              {data.skip_label || "Пропустить"}
+              {data.skip_label || t("desk.skip")}
             </button>
           )}
         </div>
@@ -510,13 +515,16 @@ function StreamingAnalysis({ text }) {
 }
 
 // ── Tier selector config ──
-const TIER_META = {
-  value: { label: "Ценность", emoji: "⭐" },
-  budget: { label: "Цена", emoji: "💰" },
-  luxury: { label: "Рейтинг", emoji: "🏆" },
-  beach: { label: "Море", emoji: "🏖️" },
-  risky: { label: "Риск", emoji: "⚠️" },
-};
+const TIER_EMOJI = { value: "⭐", budget: "💰", luxury: "🏆", beach: "🏖️", risky: "⚠️" };
+function getTierMeta(t) {
+  return {
+    value: { label: t("tier.value"), emoji: "⭐" },
+    budget: { label: t("tier.budget"), emoji: "💰" },
+    luxury: { label: t("tier.luxury"), emoji: "🏆" },
+    beach: { label: t("tier.beach"), emoji: "🏖️" },
+    risky: { label: t("tier.risky"), emoji: "⚠️" },
+  };
+}
 
 // Canonical display order for tier pills
 const TIER_ORDER = ["value", "budget", "luxury", "beach", "risky"];
@@ -544,30 +552,30 @@ const TIER_SORT = {
 const TOP_N = 4; // how many hotels to show per tier view
 
 // ── Build a Telegram-style quote from manually selected hotels ──
-function buildQuote(hotels) {
+function buildQuote(hotels, t) {
   if (!hotels.length) return "";
-  const lines = ["✈️ Подобрали для вас несколько вариантов:\n"];
+  const lines = ["✈️\n"];
   for (const h of hotels) {
     lines.push(
-      `🏨 *${h.hotel_name}* (${h.stars}★, рейтинг ${h.rating.toFixed(1)})`
+      `🏨 *${h.hotel_name}* (${h.stars}★, ${h.rating.toFixed(1)})`
     );
     lines.push(`📍 ${h.region}`);
-    lines.push(`🍽 Питание: ${h.meal_plan}`);
+    lines.push(`🍽 ${t("hotel.meal")}: ${h.meal_plan}`);
     if (h.sea_distance_m != null)
-      lines.push(`🌊 До моря: ${h.sea_distance_m} м`);
+      lines.push(`🌊 ${t("hotel.sea")}: ${h.sea_distance_m} ${t("hotel.sea_m")}`);
     lines.push(
-      `💰 от $${h.price_usd_approx.toLocaleString("en-US")} за двоих (${
-        h.nights
-      } ноч., ${h.departure_date})`
+      `💰 $${h.price_usd_approx.toLocaleString("en-US")} (${h.nights} ${t("hotel.nights")}, ${h.departure_date})`
     );
     lines.push("");
   }
-  lines.push("Свяжитесь с нами для уточнения деталей и бронирования!");
+  lines.push(t("quote.contact_cta"));
   return lines.join("\n");
 }
 
 // ── Structured response block ──
 function StructuredResult({ message, sessionId, onHide, onShowAll }) {
+  const { t } = useI18n();
+  const TIER_META = getTierMeta(t);
   const [activeTier, setActiveTier] = useState(null);
   const [poolHotels, setPoolHotels] = useState(null); // full cached list, loaded on demand
   const [poolLoading, setPoolLoading] = useState(false);
@@ -636,7 +644,7 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
         ].map((h) => [h.hotel_id, h])
       ).values(),
     ];
-    setCustomQuote(buildQuote(allSelected));
+    setCustomQuote(buildQuote(allSelected, t));
     posthog.capture("quote_generated", { hotel_count: selectedIds.size });
   };
 
@@ -660,13 +668,16 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
     if (a.hotel_name) annMap[a.hotel_name] = a;
   }
 
-  // Extract the first bold sentence from ai_analysis as the hero recommendation
-  const recMatch = structured.ai_analysis?.match(/\*\*(.+?)\*\*/);
+  // Split analysis: verdict (shown immediately) + details (collapsed table)
+  const { verdict } = splitAnalysis(structured.ai_analysis);
+
+  // Extract the first bold sentence as the hero line
+  const recMatch = verdict.match(/\*\*(.+?)\*\*/);
   const recHeroText = recMatch ? recMatch[1] : null;
-  // The rest after the first bold sentence (for the collapsed analysis)
+  // The rest of the verdict after the bold hero
   const recRestText = recHeroText
-    ? structured.ai_analysis.replace(`**${recHeroText}**`, '').trim()
-    : structured.ai_analysis;
+    ? verdict.replace(`**${recHeroText}**`, '').replace(/^\s*[.,]\s*/, '').trim()
+    : verdict;
 
   return (
     <div class="desk-result-block">
@@ -747,12 +758,11 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
       {selCount > 0 && (
         <div class="desk-select-bar">
           <span class="desk-select-bar-count">
-            {selCount}{" "}
-            {selCount === 1 ? "отель" : selCount < 5 ? "отеля" : "отелей"}{" "}
-            выбрано
+            {t("modal.selected")} {selCount}{" "}
+            {selCount === 1 ? t("modal.hotel") : selCount < 5 ? t("modal.hotels_234") : t("modal.hotels_5plus")}
           </span>
           <button class="desk-select-bar-btn" onClick={handleGenerateQuote}>
-            Сформировать сообщение →
+            {t("quote.title")} →
           </button>
           <button
             class="desk-select-bar-clear"
@@ -760,7 +770,7 @@ function StructuredResult({ message, sessionId, onHide, onShowAll }) {
               setSelectedIds(new Set());
               setCustomQuote(null);
             }}
-            title="Снять выбор"
+            title={t("modal.deselect")}
           >
             ✕
           </button>
@@ -820,6 +830,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
   const [sessionClient, setSessionClient] = useState(null);
 
   const posthog = usePostHog();
+  const { t } = useI18n();
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
   // Always-current snapshot of messages (avoids stale closure in callbacks)
@@ -960,7 +971,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
           } else if (status === 403 && /организация деактивирована/i.test(detail)) {
             msg = detail;
           } else if (status === 503) {
-            msg = "Сервис временно недоступен. Попробуйте позже.";
+            msg = t("desk.service_unavailable");
           }
           updateMessage(aiId, { state: "error", error: msg });
           return;
@@ -1101,6 +1112,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
         price_max: filterVal.priceMax,
         stars_min: filterVal.starsMin,
         meal_plan: filterVal.mealPlan,
+        operators: filterVal.operators,
       });
 
       updateMessage(msgId, { filterLoading: true });
@@ -1114,6 +1126,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
             price_max: filterVal.priceMax ?? null,
             stars_min: filterVal.starsMin ?? null,
             meal_plan: filterVal.mealPlan ?? null,
+            operators: filterVal.operators ?? [],
           }),
         });
         if (resp.ok) {
@@ -1289,10 +1302,10 @@ export default function DeskView({ sessionId, onTurnComplete }) {
             </div>
             <h2 class="desk-welcome-title">Welgo Desk</h2>
             <p class="desk-welcome-sub">
-              Аналитический ассистент для туристических агентов
+              {t("auth.agent_mode")}
             </p>
             <div class="desk-chips">
-              {DESK_CHIPS.map((chip) => (
+              {getDeskChips(t).map((chip) => (
                 <button
                   key={chip}
                   class="desk-chip"
@@ -1451,8 +1464,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
       {builderOpen && (
         <TourPromptBuilder
           onSend={(prompt) => {
-            setText(prompt);
-            setTimeout(() => textareaRef.current?.focus(), 50);
+            handleSend(prompt);
           }}
           onClose={() => setBuilderOpen(false)}
         />
@@ -1468,8 +1480,8 @@ export default function DeskView({ sessionId, onTurnComplete }) {
               posthog.capture("prompt_builder_opened");
               setBuilderOpen(true);
             }}
-            title="Конструктор запроса"
-            aria-label="Открыть конструктор запроса"
+            title={t("desk.prompt_builder")}
+            aria-label={t("desk.open_builder")}
             disabled={isThinking}
           >
             <svg
@@ -1491,20 +1503,20 @@ export default function DeskView({ sessionId, onTurnComplete }) {
             ref={textareaRef}
             class="desk-textarea"
             rows={1}
-            placeholder="Запрос агента: направление, даты, бюджет, пожелания…"
+            placeholder={t("desk.input_placeholder")}
             value={text}
             onInput={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isThinking}
-            aria-label="Запрос агента"
+            aria-label={t("desk.send")}
             autocomplete="off"
           />
           <button
             class="desk-send-btn"
             onClick={submit}
             disabled={isThinking || !text.trim()}
-            title="Отправить (Enter)"
-            aria-label="Отправить"
+            title={t("desk.send_enter")}
+            aria-label={t("desk.send")}
           >
             {isThinking ? (
               <span class="desk-send-spinner" aria-hidden="true" />
@@ -1525,7 +1537,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
                     setBlacklist((prev) => prev.filter((n) => n !== name))
                   }
                   aria-label={`Вернуть ${name}`}
-                  title="Вернуть в результаты"
+                  title={t("desk.return_to_results")}
                 >
                   ×
                 </button>
