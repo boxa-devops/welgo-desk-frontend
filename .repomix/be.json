@@ -1,0 +1,18 @@
+{
+  "output": {
+    "filePath": ".context-be.md",
+    "style": "markdown",
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "topFilesLength": 200
+  },
+  "include": ["app/**/*.py"],
+  "exclude": [
+    "**/__pycache__/**",
+    "**/alembic/versions/**",
+    "**/*.pyc",
+    "**/*.log",
+    "**/*.test.py",
+    "uv.lock"
+  ]
+}

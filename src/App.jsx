@@ -90,13 +90,7 @@ function AppShell() {
       });
     }
   }, [profile?.profile_id]);
-  // Track all mounted session IDs so DeskViews are never unmounted mid-stream
-  const [mountedSessions, setMountedSessions] = useState(() => {
-    const id = crypto.randomUUID();
-    return { current: id, ids: [id] };
-  });
-
-  const currentSessionId = mountedSessions.current;
+  const [currentSessionId, setCurrentSessionId] = useState(() => crypto.randomUUID());
 
   const refreshConversations = useCallback(() => {
     apiFetch("/api/desk/conversations")
@@ -110,17 +104,12 @@ function AppShell() {
   }, [session, profile]);
 
   const switchSession = useCallback((id) => {
-    setMountedSessions((prev) =>
-      prev.ids.includes(id)
-        ? { ...prev, current: id }
-        : { current: id, ids: [...prev.ids, id] }
-    );
+    setCurrentSessionId(id);
     handleViewChange("desk");
   }, []);
 
   const handleNewChat = useCallback(() => {
-    const id = crypto.randomUUID();
-    setMountedSessions((prev) => ({ current: id, ids: [...prev.ids, id] }));
+    setCurrentSessionId(crypto.randomUUID());
     handleViewChange("desk");
     posthog.capture("conversation_new");
   }, []);
@@ -151,13 +140,8 @@ function AppShell() {
       console.error
     );
     setConversations((prev) => prev.filter((c) => c.id !== id));
-    // Unmount deleted session; if active, open a new blank one
-    setMountedSessions((prev) => {
-      const ids = prev.ids.filter((s) => s !== id);
-      if (prev.current !== id) return { current: prev.current, ids };
-      const next = crypto.randomUUID();
-      return { current: next, ids: [...ids, next] };
-    });
+    // If deleting the active session, open a new blank one
+    setCurrentSessionId((prev) => prev === id ? crypto.randomUUID() : prev);
   }, []);
 
   // ── Auth gate ─────────────────────────────────────────────────────────────
@@ -198,18 +182,9 @@ function AppShell() {
       <div class="main-content">
         {activeView === "superadmin" && <SuperAdminPage />}
         {activeView === "profile" && <ProfilePage />}
-        {mountedSessions.ids.map((id) => (
-          <div
-            key={id}
-            class={`session-slot${
-              activeView === "desk" && id === currentSessionId
-                ? " session-slot--active"
-                : ""
-            }`}
-          >
-            <DeskView sessionId={id} onTurnComplete={refreshConversations} />
-          </div>
-        ))}
+        <div class={`session-slot${activeView === "desk" ? " session-slot--active" : ""}`}>
+          <DeskView key={currentSessionId} sessionId={currentSessionId} onTurnComplete={refreshConversations} />
+        </div>
       </div>
     </div>
   );

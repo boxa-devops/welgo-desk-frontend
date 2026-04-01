@@ -354,6 +354,7 @@ function PlainBubble({ text }) {
 
 // ── Thinking skeleton ──
 function ThinkingBubble({ statusText, progress, hotelsFound, hotelNames }) {
+  const { t } = useI18n();
   return (
     <div class="desk-ai-plain">
       <div class="desk-avatar">D</div>
@@ -821,6 +822,7 @@ export default function DeskView({ sessionId, onTurnComplete }) {
   const [messages, setMessages] = useState([]);
   const [blacklist, setBlacklist] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
+  const isThinkingRef = useRef(false);
   const [text, setText] = useState("");
   const [allHotelsOpen, setAllHotelsOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -902,7 +904,8 @@ export default function DeskView({ sessionId, onTurnComplete }) {
   // ── Send a chat message ──
   const handleSend = useCallback(
     async (rawText, contextActions = []) => {
-      if (isThinking || !rawText.trim()) return;
+      if (isThinkingRef.current || !rawText.trim()) return;
+      isThinkingRef.current = true;
       setText("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
 
@@ -1069,12 +1072,12 @@ export default function DeskView({ sessionId, onTurnComplete }) {
       } catch (e) {
         updateMessage(aiId, { state: "error", error: e.message });
       } finally {
+        isThinkingRef.current = false;
         setIsThinking(false);
         onTurnComplete?.();
       }
     },
     [
-      isThinking,
       sessionId,
       blacklist,
       clientInfo,
@@ -1247,9 +1250,9 @@ export default function DeskView({ sessionId, onTurnComplete }) {
   );
 
   const submit = useCallback(() => {
-    if (isThinking || !text.trim()) return;
+    if (isThinkingRef.current || !text.trim()) return;
     handleSend(text.trim());
-  }, [isThinking, text, handleSend]);
+  }, [text, handleSend]);
 
   const handleKeyDown = useCallback(
     (e) => {

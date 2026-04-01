@@ -1,0 +1,22 @@
+{
+  "output": {
+    "filePath": ".context-fe.md",
+    "style": "markdown",
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "topFilesLength": 200
+  },
+  "include": ["../welgo-desk-frontend/src/**/*.{js,jsx}"],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/*.css",
+    "**/*.scss",
+    "**/*.svg",
+    "**/*.png",
+    "package-lock.json"
+  ]
+}
